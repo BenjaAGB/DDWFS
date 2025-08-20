@@ -1,0 +1,50 @@
+================== GENERAL PARAMETERS ==================
+
+D              = 3.0
+resol_Data     = 128
+resol_NN       = 512
+rooftop        = 0
+ampCal         = 0.1
+wvl            = 6.350000000000001e-07
+ps_slm         = 3.74e-06
+R              = 0.0007455968688845401
+size           = 0.006
+nDE            = 2
+f1             = 0.1
+f2             = 0.1
+alpha          = 3
+nHead          = 4
+routine        = TEST
+expName        = Test_resol512_nPxData128_TEST_double
+pid            = 268978
+device         = cuda:0
+precision_name = double
+evol_save      = 1
+command        = main.py
+date           = 2025-08-20 09:39:12
+
+
+================== SINGLE ROUTINE ==================
+
+~~~~~~~~~~~~~~~~~ ROUTINE 0 ~~~~~~~~~~~~~~~~~
+----------- Train/Test 0 -----------
+
+mInorm       = 1
+init         = kaiming, kaiming
+nnModel      = GcVit
+epoch        = 40
+lr           = 0.002, 0.0002
+dlr          = 0.8, 0.8
+batch        = 10
+nData        = [80000 20000]
+ab           = 1, 1
+Dr0          = 10, 150
+fp           = (0, 2), (0, 1)
+cost         = std
+cl           = 2, 1
+vNoise       = 0, 0, 0, 1
+zModes       = 2, 210
+crop         = False
+norm_nn      = zscore
+fine tunning = 
+
