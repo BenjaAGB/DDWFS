@@ -5,8 +5,9 @@ import numpy as np
 import torch.nn as nn
 import scipy.io as scio
 from math import pi as _pi
-from torch.utils.data import Dataset
 import matplotlib.pyplot as plt
+import torch.distributed as dist
+from torch.utils.data import Dataset
 
 class dC: pass
 
@@ -26,6 +27,33 @@ W = 1.0
 mW = 1e-3*W
 
 PI = _pi
+
+def _is_dist():
+    return dist.is_available() and dist.is_initialized()
+
+def _rank0():
+    return (not _is_dist()) or dist.get_rank() == 0
+
+def print0(*args, **kwargs):
+    if _rank0(): print(*args, **kwargs)
+
+def _pick_port(base=29500):
+    return base + (os.getpid() % 1000)
+
+def _parse_devices(devstr: str):
+    s = devstr.strip().lower()
+    if s == 'cpu':
+        return 'cpu', []
+    ids = [int(x) for x in s.split(',') if x.strip()!='']
+    return 'cuda', ids
+
+def _ddp_avg(x, device):
+    if not _is_dist(): return float(x)
+    t = torch.tensor([float(x)], device=device, dtype=torch.float64)
+    dist.all_reduce(t, op=dist.ReduceOp.SUM)
+    t /= dist.get_world_size()
+    return float(t.item())
+
 
 def get_precision(type):
     precision = dC()
