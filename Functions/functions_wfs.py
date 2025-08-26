@@ -1,7 +1,6 @@
 import sys
 import torch
 import numpy as np
-from torchoptics import Field
 from Functions.utils import *
 from Functions.functions import *
 from Functions.propagator import *
