@@ -28,7 +28,7 @@ parser = argparse.ArgumentParser(description='Settings, Training and Fresnel Wav
 #### Main Parameters ####
 parser.add_argument('--D',              default = 3.0,      type = float, help = 'Diameter of the aperture in [m]')
 parser.add_argument('--nPx',            default = 128,      type = int,   help = 'Number of pixels')
-parser.add_argument('--resol_nn',       default = 512,      type = int,   help = 'Resolution of the neural network')
+parser.add_argument('--resol_nn',       default = 128,      type = int,   help = 'Resolution of the neural network')
 parser.add_argument('--wvl',            default = 635,      type = float, help = 'Wavelength in [nm]')
 parser.add_argument('--ps_slm',         default = 3.74,     type = float, help = 'Pixel size of the SLM in [um]')
 parser.add_argument('--modulation',     default = 0,        type = float, help = 'Modulation in [λ/D]')
@@ -37,10 +37,10 @@ parser.add_argument('--nHead',          default = 4,        type = int,   help =
 parser.add_argument('--f1',             default = 100,      type = float, help = 'Focal length of the first lens in [mm]')
 parser.add_argument('--f2',             default = 100,      type = float, help = 'Focal length of the second lens in [mm]')
 parser.add_argument('--nDE',            default = 2,        type = float, help = 'Number of diffractive elements')
-parser.add_argument('--device',         default = '1',      type = str,   help = 'Device to use: cpu or cuda: 0, 1, ..., 7')
+parser.add_argument('--device',         default = '3',      type = str,   help = 'Device to use: cpu or cuda: 0, 1, ..., 7')
 parser.add_argument('--precision_name', default = 'double', type = str,   help = 'Precision of the calculations: single, double, hsingle')
-parser.add_argument('--routine',        default = 'TEST_1',   type = str,  help = 'Routine: D (Diffractive), NN (NN), ND (NN + Diffractive)')
-parser.add_argument('--expName',        default = "Test",   type = str,   help = 'Experiment name for saving results')
+parser.add_argument('--routine',        default = 'TEST_1', type = str,   help = 'Routine: D (Diffractive), NN (NN), ND (NN + Diffractive)')
+parser.add_argument('--expName',        default = "Testa",   type = str,   help = 'Experiment name for saving results')
 parser.add_argument('--evol_save',      default = 1,        type = int,   help = 'Save diffractive evolution on a gif')
 
 params = parser.parse_args()
@@ -277,7 +277,7 @@ for i,ro in enumerate(routine_lists, start=0): # Rutines [{}] for each routine
                     tiempo[e] = t1 - t0
 
                     trainFigure(loss_t.detach(), loss_v.detach(), path_train)
-                    print(f'epoch finished={e} | loss_t={loss_t[e]:.3f} | loss_v={loss_v[e]:.3f}/{best_loss_v:.3f} | time={t1-t0:.3f}')
+                    print(f'epoch finished = {e} | loss_t = {loss_t[e]:.3f} [nm] | loss_v = {loss_v[e]:.3f} [nm] / {best_loss_v:.3f} | time = {t1-t0:.3f}')
 
             t1_total = time.time()
             print(f'Total time: {t1_total - t0_total:.3f} | Epoch time: {tiempo[e]:.3f} | Best loss: {best_loss_v:.3f}')

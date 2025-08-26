@@ -213,7 +213,7 @@ def select_routine(params):
         ]
 
     elif routine == 'TEST_1':
-        nData = np.array([80000,20000])*int(1)
+        nData = np.array([8000,2000])*int(1)
         nZ = [2,210]
         # nH = 4
         # al = 3
@@ -223,7 +223,7 @@ def select_routine(params):
         vN = [zN,0,0,1.]
         routine_lists = [
             [{'mInorm':mInorm, 'init':init, 
-              'nnModel':'GcVit','epoch':10, 'lr':[2e-3,2e-3], 'dlr':[.8,.8],
+              'nnModel':'GcVit','epoch':100, 'lr':[0.002,0.0002], 'dlr':[.8,.8],
                 'batch':b, 'nData':nData, 'ab':ab, 'Dr0':[10,150], 'fp':[(0,2),(0,1)], 
                 'cost':'std', 'cl':[2,1], 'vNoise':vN, 'zModes':nZ, 'crop':False,
                 'norm_nn':'zscore', 'fine tunning':'', 'lD':5,'h':np.pi/2},

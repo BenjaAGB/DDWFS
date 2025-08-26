@@ -7,6 +7,7 @@ from Functions.utils import *
 from torch import squeeze as NZ
 from torch import unsqueeze as UNZ
 from Functions.functions_wfs import *
+import torchvision.transforms.functional as f
 
 class WFS(nn.Module):
     def __init__(self, params,**kwargs):
@@ -80,6 +81,15 @@ class WFS(nn.Module):
         DE_layers    = kwargs.get('DE_layers')
 
         I = Propagation(self, phi, fourier_mask = fourier_mask, DE_layers = DE_layers)
+
+        if self.resol_nn == 128:
+            I = f.resize(I,(128,128), antialias = True, interpolation = f.InterpolationMode.BILINEAR)
+        elif self.resol_nn == 256:
+            I = f.resize(I,(256,256), antialias = True, interpolation = f.InterpolationMode.BILINEAR)
+        elif self.resol_nn == 512:
+            I = f.resize(I,(512,512), antialias = True, interpolation = f.InterpolationMode.BILINEAR)
+        elif self.resol_nn == 1024:
+            I = f.resize(I,(1024,1024),antialias = True, interpolation = f.InterpolationMode.BILINEAR)
 
         I = addNoise(I, vNoise)
         if self.crop and self.nHead == 4:

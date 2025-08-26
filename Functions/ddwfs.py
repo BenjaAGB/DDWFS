@@ -61,8 +61,8 @@ class FWFS(nn.Module):
             self.NN = select_nn(self)
             # method = importlib.import_module('models.GcVit')
 
-            self.NN = method.GCViT(num_classes = len(self.wfs.jModes), depths = [2,2,6,2], num_heads = [2,4,8,16], window_size = [16, 16, 32, 16],
-                                    resolution = self.wfs.resol_nn, in_chans = 1, dim = 64, mlp_ratio = 3, drop_path_rate = 0.2).to(self.precision.real).to(self.device)
+            # self.NN = method.GCViT(num_classes = len(self.wfs.jModes), depths = [2,2,6,2], num_heads = [2,4,8,16], window_size = [16, 16, 32, 16],
+            #                         resolution = self.wfs.resol_nn, in_chans = 1, dim = 64, mlp_ratio = 3, drop_path_rate = 0.2).to(self.precision.real).to(self.device)
     
         self.k = torch.tensor((2*torch.pi)/params.wvl, dtype = self.precision.real, device = self.device)
         self.I0 = self.wfs.forward_I0(self.wfs.Piston) # T[1,1,N,M]

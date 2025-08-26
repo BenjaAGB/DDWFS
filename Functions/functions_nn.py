@@ -8,12 +8,20 @@ bar_format = "{l_bar}{bar}| {n}/{total} [{elapsed}<{remaining}, {rate_fmt}]"
 
 def select_nn(params):
     method = importlib.import_module('models.GcVit')
-
+    
     if params.wfs.resol_nn == 128:
-        print('hola')
-
-    model = method.GCViT(num_classes = len(params.wfs.jModes), depths = [2,2,6,2], num_heads = [2,4,8,16], window_size = [16, 16, 32, 16],
-                                    resolution = params.wfs.resol_nn, in_chans = 1, dim = 64, mlp_ratio = 3, drop_path_rate = 0.2).to(params.precision.real).to(params.device)
+        model = method.GCViT(num_classes = len(params.wfs.jModes), depths = [2,2,6,2], num_heads = [2,4,8,16], window_size = [4, 4, 8, 4],
+                             resolution = params.wfs.resol_nn, in_chans = 1, dim = 64, mlp_ratio = 3, drop_path_rate = 0.2).to(params.precision.real).to(params.device)
+    elif params.wfs.resol_nn == 256:
+        model = method.GCViT(num_classes = len(params.wfs.jModes), depths = [2,2,6,2], num_heads = [2,4,8,16], window_size = [8, 8, 16, 8],
+                             resolution = params.wfs.resol_nn, in_chans = 1, dim = 64, mlp_ratio = 3, drop_path_rate = 0.2).to(params.precision.real).to(params.device)
+    elif params.wfs.resol_nn == 512:
+        model = method.GCViT(num_classes = len(params.wfs.jModes), depths = [2,2,6,2], num_heads = [2,4,8,16], window_size = [16, 16, 32, 16],
+                             resolution = params.wfs.resol_nn, in_chans = 1, dim = 64, mlp_ratio = 3, drop_path_rate = 0.2).to(params.precision.real).to(params.device)
+    elif params.wfs.resol_nn == 1024:
+        model = method.GCViT(num_classes = len(params.wfs.jModes), depths = [2,2,6,2], num_heads = [2,4,8,16], window_size = [32, 32, 64, 32],
+                             resolution = params.wfs.resol_nn, in_chans = 1, dim = 64, mlp_ratio = 3, drop_path_rate = 0.2).to(params.precision.real).to(params.device)        
+        
     return model
 
 def train(params, model, train_data):
