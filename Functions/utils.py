@@ -199,7 +199,7 @@ def select_routine(params):
     #     ]
         
     if routine == 'TEST':
-        nData = np.array([80000,20000])*int(1)
+        nData = np.array([80,20])*int(1)
         fp = [(0,2),(0,1)] ##
         cost = 'std'
         norm_nn = 'zscore'
@@ -207,10 +207,50 @@ def select_routine(params):
             [{'mInorm':mInorm, 'init':init, 
               'nnModel':'GcVit', 'epoch':40, 'lr':[2e-3,2e-4], 'dlr':[.8,.8],
               'batch':10, 'nData':nData, 'ab':ab, 'Dr0':[10,150], 'fp':fp, 
-              'cost':cost, 'cl':[2,1], 'vNoise':[0,0,0,1], 'zModes':[2,210], 'crop':params.crop,
+              'cost':cost, 'cl':[1,0], 'vNoise':[0,0,0,1], 'zModes':[2,210], 'crop':params.crop,
               'norm_nn':norm_nn, 'fine tunning':''},
             ],
         ]
+
+    elif routine == 'TEST_1':
+        nData = np.array([80000,20000])*int(1)
+        nZ = [2,210]
+        # nH = 4
+        # al = 3
+        init = ['CONSTANT',0]
+        b = 10
+        zN = 0
+        vN = [zN,0,0,1.]
+        routine_lists = [
+            [{'mInorm':mInorm, 'init':init, 
+              'nnModel':'GcVit','epoch':10, 'lr':[2e-3,2e-3], 'dlr':[.8,.8],
+                'batch':b, 'nData':nData, 'ab':ab, 'Dr0':[10,150], 'fp':[(0,2),(0,1)], 
+                'cost':'std', 'cl':[2,1], 'vNoise':vN, 'zModes':nZ, 'crop':False,
+                'norm_nn':'zscore', 'fine tunning':'', 'lD':5,'h':np.pi/2},
+            ],
+        ]
+
+    elif routine == 'TEST_PAPER_NICO':
+
+        nData = np.array([8000,2000])*int(5)
+        nZ = [2,200]
+        nH = 0
+        al = 3
+        init = ['constant', 'constant']
+        b = 10
+        lr = np.array([2e-3,2e-4])*1e-1
+        routine_lists = [
+            # DNN
+            [{'mInorm':mInorm, 'alpha':al, 'nHead':nH, 'init':init, 
+              'nnModel':'GcVit', 'epoch':20, 'lr':lr, 'dlr':[.8,.8],
+                'batch':b, 'nData':nData, 'ab':ab, 'Dr0':[2.5,100], 'fp':[(0,2),(0,1)], 
+                'cost':'std', 'cl':[2,1], 'vNoise':[.0,0.,0.,1.], 'zModes':nZ, 'crop':False,
+                'norm_nn':'zscore', 'fine tunning':'./MODELS/nD50k/b10/nZ200/n5init_zN0_all_cte_nRr1_nD50k_b10_nZ200-nPx128_ns_all_single/routine_0/train_0/Checkpoint/checkpoint_best-v.pth',
+                'lD':5,'h':np.pi/2},
+            ]
+        ]
+
+
     # if routine == 'PNN':
     #     nData = np.array([80,20])*int(1)
     #     fp = [(0,2),(0,1)]

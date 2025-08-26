@@ -1,11 +1,20 @@
-
 import torch
+import importlib
 import numpy as np
 from tqdm import tqdm
 import torch.optim as optim
 
 bar_format = "{l_bar}{bar}| {n}/{total} [{elapsed}<{remaining}, {rate_fmt}]"
 
+def select_nn(params):
+    method = importlib.import_module('models.GcVit')
+
+    if params.wfs.resol_nn == 128:
+        print('hola')
+
+    model = method.GCViT(num_classes = len(params.wfs.jModes), depths = [2,2,6,2], num_heads = [2,4,8,16], window_size = [16, 16, 32, 16],
+                                    resolution = params.wfs.resol_nn, in_chans = 1, dim = 64, mlp_ratio = 3, drop_path_rate = 0.2).to(params.precision.real).to(params.device)
+    return model
 
 def train(params, model, train_data):
     epoch_loss = 0
@@ -55,7 +64,7 @@ def train(params, model, train_data):
                 zgt = zgt - params['cl'][1] * zest_tmp    # T[b,z]
                 for i in range(phi.shape[0]): 
                     phi[i, 0:1, :, :] = phi[i, 0:1, :, :] - params['cl'][1] * (torch.reshape(modes@zest_tmp[i, :], (1, 1, model.wfs.nPx, model.wfs.nPx))) 
-            loss = torch.mean(params['cost'][1](phi[:, :, model.wfs.pupilLogical] * (1/model.k)))                  # select only values inside the pupil T[b]-> T[1]
+            loss = torch.mean(params['cost'][1](phi[:, :, model.wfs.pupilLogical] * (1/model.k))) * 1e9                 # select only values inside the pupil T[b]-> T[1]
 
         elif params['cost'][0] in ['mse', 'rmse', 'mae']:
             for _ in range(int(params['cl'][0])):
@@ -65,7 +74,7 @@ def train(params, model, train_data):
                     for i in range(phi.shape[0]):
                         phi[i, 0:1, :, :] = phi[i, 0:1, :, :] - params['cl'][1] * (torch.reshape(modes@zest_tmp[i, :], (1, 1, model.wfs.nPx, model.wfs.nPx)))
             zest, _ = model(phi, vNoise = vNoise)# T[b,z]
-            loss = torch.mean(params['cost'][1](zgt * (1/model.k), zest * (1/model.k)))# T[b]-> T[1]|
+            loss = torch.mean(params['cost'][1](zgt * (1/model.k), zest * (1/model.k))) * 1e9 # T[b]-> T[1]|
         loss.backward()
         # step optimizer
         if params['fp'][0] and model.nDE:
@@ -98,7 +107,7 @@ def validation(params, model, val_data): # test with the vNoise set regardless i
                     for i in range(phi.shape[0]):
                         phi_corr = params['cl'][1] * (torch.reshape(modes@zest_tmp[i, :] , (1, 1, model.wfs.nPx, model.wfs.nPx))) 
                         phi[i, 0:1, :, :] = phi[i, 0:1, :, :] - phi_corr
-                loss = (params['cost'][1](phi[:, :, model.wfs.pupilLogical] * (1/model.k)))# select only values inside the pupil T[b]-> T[1]
+                loss = (params['cost'][1](phi[:, :, model.wfs.pupilLogical] * (1/model.k))) * 1e9# select only values inside the pupil T[b]-> T[1]
 
             elif params['cost'][0] in ['mse', 'rmse', 'mae']:
                 for _ in range(int(params['cl'][0])):
@@ -108,7 +117,7 @@ def validation(params, model, val_data): # test with the vNoise set regardless i
                         phi_corr = params['cl'][1] * (torch.reshape(modes@zest_tmp[i, :], (1, 1, model.wfs.nPx, model.wfs.nPx))) 
                         phi[i, 0:1, :, :] = phi[i, 0:1, :, :] - phi_corr
                 zest, _ = model(phi)# T[b,z] 
-                loss = (params['cost'][1](zgt * (1/model.k), zest * (1/model.k)))# T[b]-> T[1]             
+                loss = (params['cost'][1](zgt * (1/model.k), zest * (1/model.k))) * 1e9# T[b]-> T[1]             
                 
                 Zest[b, :] = zest.detach().cpu()
                 Zgt[b, :] = zgt.detach().cpu()

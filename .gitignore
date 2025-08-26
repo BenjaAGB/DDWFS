@@ -27,3 +27,5 @@ dataset/D3_ResData128_ResNN512_Dro10-150_Z210_T100_αβ11_double/part_0.mat
 train/double/Test_resol512_nPxData128_TEST_double/routine_0/train_0/Checkpoint/checkpoint_best-all.pth
 train/double/Test_resol512_nPxData128_TEST_double/routine_0/train_0/Checkpoint/weights-de.pt
 train/double/Test_resol512_nPxData128_TEST_double/routine_0/train_0/Checkpoint/weights-nn.pt
+dataset/D3_ResData128_ResNN512_Dro10-100_Z200_T500_αβ11_double/part_0.mat
+train/double/Test_resol512_nPxData128_TEST_1_double/routine_0/train_0/Checkpoint/checkpoint_best-all.pth

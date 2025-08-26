@@ -4,6 +4,7 @@ import torch.nn as nn
 from Functions.wfs import *
 from Functions.utils import *
 from Functions.functions_wfs import *
+from Functions.functions_nn import select_nn
 
 
 # from model.pyr import *
@@ -42,8 +43,8 @@ class FWFS(nn.Module):
                 if self.init[0] == 'kaiming':
                     print('KAIMING')
                     nn.init.kaiming_normal_(de, mode='fan_in')
-                    with torch.no_grad():
-                        de.mul_(0.05)
+                    # with torch.no_grad():
+                    #     de.mul_(0.05)
                 else:
                     print('CONSTANT', self.init[1])
                     nn.init.constant_(de, float(self.init[1]))
@@ -56,7 +57,9 @@ class FWFS(nn.Module):
 
         ### NN ###
         if self.train_state[1]:
-            method = importlib.import_module('models.GcVit')
+
+            self.NN = select_nn(self)
+            # method = importlib.import_module('models.GcVit')
 
             self.NN = method.GCViT(num_classes = len(self.wfs.jModes), depths = [2,2,6,2], num_heads = [2,4,8,16], window_size = [16, 16, 32, 16],
                                     resolution = self.wfs.resol_nn, in_chans = 1, dim = 64, mlp_ratio = 3, drop_path_rate = 0.2).to(self.precision.real).to(self.device)

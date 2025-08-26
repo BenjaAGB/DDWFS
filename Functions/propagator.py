@@ -138,7 +138,7 @@ class TorchField:
         iiij = iiN.view(1,1,N,1) * iiN.view(1,1,1,N)
         field = field * iiij
 
-        _2pi = 2.0 * torch.pi #3.141592654
+        _2pi = 2.0 * 3.141592654
         zz   = z
         z    = abs(z)
         kz   = _2pi / wavelength * z

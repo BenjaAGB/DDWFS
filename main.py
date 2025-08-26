@@ -37,9 +37,9 @@ parser.add_argument('--nHead',          default = 4,        type = int,   help =
 parser.add_argument('--f1',             default = 100,      type = float, help = 'Focal length of the first lens in [mm]')
 parser.add_argument('--f2',             default = 100,      type = float, help = 'Focal length of the second lens in [mm]')
 parser.add_argument('--nDE',            default = 2,        type = float, help = 'Number of diffractive elements')
-parser.add_argument('--device',         default = '0',      type = str,   help = 'Device to use: cpu or cuda: 0, 1, ..., 7')
+parser.add_argument('--device',         default = '1',      type = str,   help = 'Device to use: cpu or cuda: 0, 1, ..., 7')
 parser.add_argument('--precision_name', default = 'double', type = str,   help = 'Precision of the calculations: single, double, hsingle')
-parser.add_argument('--routine',        default = 'TEST',   type = str,  help = 'Routine: D (Diffractive), NN (NN), ND (NN + Diffractive)')
+parser.add_argument('--routine',        default = 'TEST_1',   type = str,  help = 'Routine: D (Diffractive), NN (NN), ND (NN + Diffractive)')
 parser.add_argument('--expName',        default = "Test",   type = str,   help = 'Experiment name for saving results')
 parser.add_argument('--evol_save',      default = 1,        type = int,   help = 'Save diffractive evolution on a gif')
 
@@ -218,8 +218,8 @@ for i,ro in enumerate(routine_lists, start=0): # Rutines [{}] for each routine
                 t0 = time.time()
 
                 par = {'epoch':e, 'batch':p_local['batch'], 'lr':lr, 'dlr':dlr, 'cost':(p_local['cost'], cost), 'fp':freeze_mask[e], 'cl':p_local['cl'], 'vN':p_local['vNoise']}
-                loss_t[e] = train(par, model.train(),train_data)    # loss
-                loss_v[e],phis = validation(par, model.eval(),val_data) # error 
+                loss_t[e] = train(par, model.train(),train_data)   # loss
+                loss_v[e],phis = validation(par, model.eval(),val_data)# error 
 
                 ## Checkpoint ##
                 evol_par = {'epoch':e, 'lr':lr, 'dlr':dlr, 'loss_v':loss_v[e], 'loss_t':loss_t[e]}
