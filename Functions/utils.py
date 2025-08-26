@@ -28,27 +28,27 @@ mW = 1e-3*W
 
 PI = _pi
 
-def _is_dist():
+def is_dist():
     return dist.is_available() and dist.is_initialized()
 
-def _rank0():
-    return (not _is_dist()) or dist.get_rank() == 0
+def rank0():
+    return (not is_dist()) or dist.get_rank() == 0
 
 def print0(*args, **kwargs):
-    if _rank0(): print(*args, **kwargs)
+    if rank0(): print(*args, **kwargs)
 
-def _pick_port(base=29500):
+def pick_port(base=29500):
     return base + (os.getpid() % 1000)
 
-def _parse_devices(devstr: str):
+def parse_devices(devstr: str):
     s = devstr.strip().lower()
     if s == 'cpu':
         return 'cpu', []
     ids = [int(x) for x in s.split(',') if x.strip()!='']
     return 'cuda', ids
 
-def _ddp_avg(x, device):
-    if not _is_dist(): return float(x)
+def ddp_avg(x, device):
+    if not is_dist(): return float(x)
     t = torch.tensor([float(x)], device=device, dtype=torch.float64)
     dist.all_reduce(t, op=dist.ReduceOp.SUM)
     t /= dist.get_world_size()
@@ -242,6 +242,24 @@ def select_routine(params):
 
     elif routine == 'TEST_1':
         nData = np.array([8000,2000])*int(1)
+        nZ = [2,210]
+        # nH = 4
+        # al = 3
+        init = ['CONSTANT',0]
+        b = 10
+        zN = 0
+        vN = [zN,0,0,1.]
+        routine_lists = [
+            [{'mInorm':mInorm, 'init':init, 
+              'nnModel':'GcVit','epoch':100, 'lr':[0.002,0.0002], 'dlr':[.8,.8],
+                'batch':b, 'nData':nData, 'ab':ab, 'Dr0':[10,150], 'fp':[(0,2),(0,1)], 
+                'cost':'std', 'cl':[2,1], 'vNoise':vN, 'zModes':nZ, 'crop':False,
+                'norm_nn':'zscore', 'fine tunning':'', 'lD':5,'h':np.pi/2},
+            ],
+        ]
+    
+    elif routine == 'TEST_P':
+        nData = np.array([80,20])*int(1)
         nZ = [2,210]
         # nH = 4
         # al = 3
