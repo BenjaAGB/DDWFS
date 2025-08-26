@@ -165,7 +165,7 @@ def trainFigure(loss_t,loss_v,path="./"):
     # Add title and labels
     ax.set_title("Training v/s Epochs")
     ax.set_xlabel("Epochs")
-    ax.set_ylabel("Value")
+    ax.set_ylabel("Value [nm]")
     # Add legend
     ax.legend()
     # Save the figure to a file

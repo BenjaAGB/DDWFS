@@ -2,26 +2,26 @@
 
 D              = 3.0
 resol_Data     = 128
-resol_NN       = 512
+resol_NN       = 128
 rooftop        = 0
 ampCal         = 0.1
 wvl            = 6.350000000000001e-07
 ps_slm         = 3.74e-06
 R              = 0.0007455968688845401
 size           = 0.006
-nDE            = 2
+nDE            = 1
 f1             = 0.1
 f2             = 0.1
 alpha          = 3
 nHead          = 4
 routine        = TEST_1
 expName        = Testa_resol512_nPxData128_TEST_1_single
-pid            = 984486
-device         = cuda:3
+pid            = 346215
+device         = cuda:0
 precision_name = single
 evol_save      = 1
-command        = main.py
-date           = 2025-08-26 01:04:34
+command        = gen_data.py
+date           = 2025-08-26 02:31:34
 
 
 ================== SINGLE ROUTINE ==================
@@ -36,7 +36,7 @@ epoch        = 100
 lr           = 0.002, 0.0002
 dlr          = 0.8, 0.8
 batch        = 10
-nData        = [8000 2000]
+nData        = [80000 20000]
 ab           = 1, 1
 Dr0          = 10, 150
 fp           = (0, 2), (0, 1)

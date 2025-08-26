@@ -36,11 +36,11 @@ parser.add_argument('--alpha',          default = 3,        type = float, help =
 parser.add_argument('--nHead',          default = 4,        type = int,   help = 'Number of faces of the pyramid')
 parser.add_argument('--f1',             default = 100,      type = float, help = 'Focal length of the first lens in [mm]')
 parser.add_argument('--f2',             default = 100,      type = float, help = 'Focal length of the second lens in [mm]')
-parser.add_argument('--nDE',            default = 2,        type = float, help = 'Number of diffractive elements')
-parser.add_argument('--device',         default = '3',      type = str,   help = 'Device to use: cpu or cuda: 0, 1, ..., 7')
-parser.add_argument('--precision_name', default = 'double', type = str,   help = 'Precision of the calculations: single, double, hsingle')
+parser.add_argument('--nDE',            default = 1,        type = int,   help = 'Number of diffractive elements')
+parser.add_argument('--device',         default = '0',      type = str,   help = 'Device to use: cpu or cuda: 0, 1, ..., 7')
+parser.add_argument('--precision_name', default = 'single', type = str,   help = 'Precision of the calculations: single, double, hsingle')
 parser.add_argument('--routine',        default = 'TEST_1', type = str,   help = 'Routine: D (Diffractive), NN (NN), ND (NN + Diffractive)')
-parser.add_argument('--expName',        default = "Testa",   type = str,   help = 'Experiment name for saving results')
+parser.add_argument('--expName',        default = "Test",   type = str,   help = 'Experiment name for saving results')
 parser.add_argument('--evol_save',      default = 1,        type = int,   help = 'Save diffractive evolution on a gif')
 
 params = parser.parse_args()
@@ -75,7 +75,7 @@ params.pid          = os.getpid()
 routine_lists = select_routine(params)
 
 current_date_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-params.expName   = f'{params.expName}_resol{params.fovPx}_nPxData{params.nPx}_{params.routine}_{params.precision_name}'
+params.expName   = f'{params.expName}_ResolNN_{params.resol_nn}_ResolData_{params.nPx}_NDiffractive_{params.nDE}_Routine_{params.routine}'
 
 ### Create Log ###
 Log_Path         = f'./train/{params.precision_name}/{params.expName}'
@@ -136,7 +136,7 @@ for i,ro in enumerate(routine_lists, start=0): # Rutines [{}] for each routine
             prs.fp = p_local['fp']
 
             ### DATASET ###
-            atm_path = f"./dataset/D{int(prs.D)}_ResData{int(prs.nPx)}_ResNN{int(prs.resol_nn)}_Dro{p_local['Dr0'][0]}-{p_local['Dr0'][1]}_Z{p_local['zModes'][-1]}_T{sum(p_local['nData'])}_αβ{ab}_{prs.precision_name}"
+            atm_path = f"./dataset/D{int(prs.D)}_ResData{int(prs.nPx)}_Dro{p_local['Dr0'][0]}-{p_local['Dr0'][1]}_Z{p_local['zModes'][-1]}_T{sum(p_local['nData'])}_αβ{ab}_{prs.precision_name}"
 
             if not os.path.exists(atm_path) or not os.listdir(atm_path):
                 if not os.path.exists(atm_path):
