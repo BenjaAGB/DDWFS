@@ -39,11 +39,11 @@ parser.add_argument('--alpha',          default = 3,          type = float, help
 parser.add_argument('--nHead',          default = 0,          type = int,   help = 'Number of faces of the pyramid')
 parser.add_argument('--f1',             default = 100,        type = float, help = 'Focal length of the first lens in [mm]')
 parser.add_argument('--f2',             default = 100,        type = float, help = 'Focal length of the second lens in [mm]')
-parser.add_argument('--nDE',            default = 2,          type = int,   help = 'Number of diffractive elements')
+parser.add_argument('--nDE',            default = 3,          type = int,   help = 'Number of diffractive elements')
 parser.add_argument('--dz',             default = 0,          type = float, help = 'Step size for the propagation in [mm]')
 parser.add_argument('--dz_before',      default = 0,          type = float, help = 'Step size before the PSF in [mm]')
 parser.add_argument('--dz_after',       default = 0,          type = float, help = 'Step size after the PSF in [mm]')
-parser.add_argument('--posDE',          default = [], type = int,   help = 'Position of the diffractive propagator')
+parser.add_argument('--posDE',          default = [-1, 0, 1],         type = int,   help = 'Position of the diffractive propagator', nargs = '+')
 parser.add_argument('--device',         default = '4',        type = str,   help = 'Device to use: cpu or cuda: 0, 1, ..., 7')
 parser.add_argument('--precision_name', default = 'single',   type = str,   help = 'Precision of the calculations: single, double, hsingle')
 parser.add_argument('--routine',        default = 'TEST_P',   type = str,   help = 'Routine: D (Diffractive), NN (NN), ND (NN + Diffractive)')
@@ -97,13 +97,24 @@ routine_lists = select_routine(params)
 
 current_date_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-if not params.posDE:
+if not params.posDE and params.nDE >= 0:
+    if params.nDE == 0:
+        params.dz = 0
+        params.dz_before = 0
+        params.dz_after = 0
+    else:
+        params.dz = params.f2 / params.nDE
+        params.dz_before = 0
+        params.dz_after = params.dz
+
     params.de_info = compute_de_positions_for_log(params)
     DE_z = np.array(params.de_info['DE_z_from_aperture']) * 1000 #--- DEs distance mm---#
     de_z_formatted = [f"{z*1000:.2f}" for z in params.de_info['DE_z_from_aperture']]
     de_z_str = '-'.join(de_z_formatted)
-    params.posDE = 'Default'
-else:
+    if params.nDE == 0:
+        de_z_str = 'None'
+
+elif params.posDE and params.nDE > 0:
     PosDE_Error(params)
     params.de_info = compute_de_positions_for_log(params)
     DE_z = np.array(params.de_info['DE_z_from_aperture']) * 1000 #--- DEs distance mm---#
@@ -111,9 +122,9 @@ else:
     de_z_str = '-'.join(de_z_formatted)
 
 if params.nHead > 0:
-    params.expName   = f'{params.expName}_ResolNN_{params.resol_nn}_ResolData_{params.nPx}_Geometry_[NHead{params.nHead}-Alpha{params.alpha}]_NDiffractive_{params.nDE}_PosD_[{de_z_str}][mm]_Routine_{params.routine}'
+    params.expName   = f'{params.expName}_ResolNN_{params.resol_nn}_ResolData_{params.nPx}_Geometry_[NHead{params.nHead}-Alpha{params.alpha}]_NDiffractive_{params.nDE}_PosD_[{de_z_str}][mm]_f1_[{params.f1 * 1000 }][mm]_f2_[{params.f2 * 1000 }][mm]_DistSys[{(params.f1 * 2 + params.f2 * 2) *1000 }][mm]_Routine_{params.routine}'
 elif params.nHead == 0:
-    params.expName   = f'{params.expName}_ResolNN_{params.resol_nn}_ResolData_{params.nPx}_NO-Geometry_NDiffractive_{params.nDE}_PosD_[{de_z_str}][mm]_Routine_{params.routine}'
+    params.expName   = f'{params.expName}_ResolNN_{params.resol_nn}_ResolData_{params.nPx}_NO-Geometry_NDiffractive_{params.nDE}_PosD_[{de_z_str}][mm]_f1_[{params.f1 * 1000 }][mm]_f2_[{params.f2 * 1000 }][mm]_DistSys[{(params.f1 * 2 + params.f2 * 2) *1000 }][mm]_Routine_{params.routine}'
 
 
 ### Create Log ###

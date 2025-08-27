@@ -116,38 +116,51 @@ def compute_de_positions_for_log(obj):
     z_image = z_lens2 + f2
 
     posDE = list(getattr(obj, 'posDE', []) or [])
-    if getattr(obj, 'dz', None) is not None:
-        step_before = float(obj.dz)
-        step_after  = float(obj.dz)
+    if not posDE and obj.nDE >= 0:
+        step = float(obj.dz)
+        step_before = obj.dz_before if obj.dz_before is not None else 0
+        step_after  = obj.dz_after  if obj.dz_after  is not None else step
+
+        de_z_from_aperture_m = []
+        de_z_rel_psf_m = []
+
+        for i in range(obj.nDE):
+            de_z_from_aperture_m.append(z_psf + (i) * step)
+            de_z_rel_psf_m.append((i) * step)
+
     else:
-        neg_mags = sorted([-p for p in posDE if p < 0], reverse=True)
-        pos_mags = sorted([p  for p in posDE if p > 0])
-        step_before = getattr(obj, 'dz_before', None)
-        step_after  = getattr(obj,  'dz_after', None)
-        if step_before is None and len(neg_mags) > 0:
-            step_before = f1 / (neg_mags[0] + 1)
-        if step_after is None and len(pos_mags) > 0:
-            step_after = f2 / (pos_mags[-1] + 1)
-
-        if step_before is None: step_before = 0.0
-        if step_after  is None: step_after  = 0.0
-
-    de_z_from_aperture_m = []
-    de_z_rel_psf_m = []
-    for p in posDE:
-        if p < 0:
-            z = z_psf - abs(p) * step_before
-            z = max(z, z_lens1)
-            rel = -abs(p) * step_before
-        elif p == 0:
-            z = z_psf
-            rel = 0.0
+        if getattr(obj, 'dz', None) is not None:
+            step_before = float(obj.dz)
+            step_after  = float(obj.dz)
         else:
-            z = z_psf + p * step_after
-            z = min(z, z_lens2)
-            rel =  p * step_after
-        de_z_from_aperture_m.append(z)
-        de_z_rel_psf_m.append(rel)
+            neg_mags = sorted([-p for p in posDE if p < 0], reverse=True)
+            pos_mags = sorted([p  for p in posDE if p > 0])
+            step_before = getattr(obj, 'dz_before', None)
+            step_after  = getattr(obj,  'dz_after', None)
+            if step_before is None and len(neg_mags) > 0:
+                step_before = f1 / (neg_mags[0] + 1)
+            if step_after is None and len(pos_mags) > 0:
+                step_after = f2 / (pos_mags[-1] + 1)
+
+            if step_before is None: step_before = 0.0
+            if step_after  is None: step_after  = 0.0
+
+        de_z_from_aperture_m = []
+        de_z_rel_psf_m = []
+        for p in posDE:
+            if p < 0:
+                z = z_psf - abs(p) * step_before
+                z = max(z, z_lens1)
+                rel = -abs(p) * step_before
+            elif p == 0:
+                z = z_psf
+                rel = 0.0
+            else:
+                z = z_psf + p * step_after
+                z = min(z, z_lens2)
+                rel =  p * step_after
+            de_z_from_aperture_m.append(z)
+            de_z_rel_psf_m.append(rel)
 
     return {
         'z_lens1': z_lens1,
