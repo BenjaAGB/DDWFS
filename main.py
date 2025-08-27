@@ -29,28 +29,28 @@ command = ' '.join(sys.argv)
 parser = argparse.ArgumentParser(description='Settings, Training and Fresnel Wavefront Sensor parameters')
 
 #### Main Parameters ####
-parser.add_argument('--D',              default = 3.0,      type = float, help = 'Diameter of the aperture in [m]')
-parser.add_argument('--nPx',            default = 128,      type = int,   help = 'Number of pixels')
-parser.add_argument('--resol_nn',       default = 128,      type = int,   help = 'Resolution of the neural network')
-parser.add_argument('--wvl',            default = 635,      type = float, help = 'Wavelength in [nm]')
-parser.add_argument('--ps_slm',         default = 3.74,     type = float, help = 'Pixel size of the SLM in [um]')
-parser.add_argument('--modulation',     default = 0,        type = float, help = 'Modulation in [λ/D]')
-parser.add_argument('--alpha',          default = 3,        type = float, help = 'Angle of the PWFS in [degrees]')
-parser.add_argument('--nHead',          default = 4,        type = int,   help = 'Number of faces of the pyramid')
-parser.add_argument('--f1',             default = 100,      type = float, help = 'Focal length of the first lens in [mm]')
-parser.add_argument('--f2',             default = 100,      type = float, help = 'Focal length of the second lens in [mm]')
-parser.add_argument('--nDE',            default = 1,        type = int,   help = 'Number of diffractive elements')
-parser.add_argument('--device',         default = '0,1',      type = str,   help = 'Device to use: cpu or cuda: 0, 1, ..., 7')
-parser.add_argument('--precision_name', default = 'single', type = str,   help = 'Precision of the calculations: single, double, hsingle')
-parser.add_argument('--routine',        default = 'TEST_P', type = str,   help = 'Routine: D (Diffractive), NN (NN), ND (NN + Diffractive)')
-parser.add_argument('--expName',        default = "Test",   type = str,   help = 'Experiment name for saving results')
-parser.add_argument('--evol_save',      default = 1,        type = int,   help = 'Save diffractive evolution on a gif')
+parser.add_argument('--D',              default = 3.0,        type = float, help = 'Diameter of the aperture in [m]')
+parser.add_argument('--nPx',            default = 128,        type = int,   help = 'Number of pixels')
+parser.add_argument('--resol_nn',       default = 128,        type = int,   help = 'Resolution of the neural network')
+parser.add_argument('--wvl',            default = 635,        type = float, help = 'Wavelength in [nm]')
+parser.add_argument('--ps_slm',         default = 3.74,       type = float, help = 'Pixel size of the SLM in [um]')
+parser.add_argument('--modulation',     default = 0,          type = float, help = 'Modulation in [λ/D]')
+parser.add_argument('--alpha',          default = 3,          type = float, help = 'Angle of the PWFS in [degrees]')
+parser.add_argument('--nHead',          default = 4,          type = int,   help = 'Number of faces of the pyramid')
+parser.add_argument('--f1',             default = 100,        type = float, help = 'Focal length of the first lens in [mm]')
+parser.add_argument('--f2',             default = 100,        type = float, help = 'Focal length of the second lens in [mm]')
+parser.add_argument('--nDE',            default = 3,          type = int,   help = 'Number of diffractive elements')
+parser.add_argument('--posDE',          default = [-1, 0, 1], type = int,   help = 'Position of the diffractive propagator')
+parser.add_argument('--device',         default = '6',        type = str,   help = 'Device to use: cpu or cuda: 0, 1, ..., 7')
+parser.add_argument('--precision_name', default = 'single',   type = str,   help = 'Precision of the calculations: single, double, hsingle')
+parser.add_argument('--routine',        default = 'TEST_1',   type = str,   help = 'Routine: D (Diffractive), NN (NN), ND (NN + Diffractive)')
+parser.add_argument('--expName',        default = "Test",     type = str,   help = 'Experiment name for saving results')
+parser.add_argument('--evol_save',      default = 1,          type = int,   help = 'Save diffractive evolution on a gif')
 
 params = parser.parse_args()
 ############################################# Argument Parser #############################################
 
-# def run(params):
-    #### More parameters ####
+#### More parameters ####
 if params.resol_nn <= params.nPx:
     params.resol_nn = params.nPx
 
@@ -63,6 +63,10 @@ params.amp_cal      = 0.1                                                       
 params.device       = torch.device(f"cuda:{params.device}" if torch.cuda.is_available() else "cpu") # Device to use
 params.precision    = get_precision(type=params.precision_name)                                          # Define the dtype for the experiment
 
+params.dz           = None
+params.dz_after    = None
+params.dz_before   = None
+
 # params.pupil        = CreateTelescopePupil_physical(params.nPx, params.R, params.size) ################
 params.samp     = 2
 params.fovPx    = 2*params.samp*params.nPx
@@ -74,14 +78,11 @@ params.pupilLogical = params.pupil!=0
 params.crop         = False
 params.pid          = os.getpid()
 
-### Select Device ###
-
-
 #### Select routine ####
 routine_lists = select_routine(params)
 
 current_date_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-params.expName   = f'{params.expName}_ResolNN_{params.resol_nn}_ResolData_{params.nPx}_NDiffractive_{params.nDE}_Routine_{params.routine}'
+params.expName   = f'{params.expName}_ResolNN_{params.resol_nn}_ResolData_{params.nPx}_NDiffractive_{params.nDE}_PosD_{params.posDE}_Routine_{params.routine}'
 
 ### Create Log ###
 Log_Path         = f'./train/{params.precision_name}/{params.expName}'
@@ -287,38 +288,3 @@ for i,ro in enumerate(routine_lists, start=0): # Rutines [{}] for each routine
 
             t1_total = time.time()
             print(f'Total time: {t1_total - t0_total:.3f} | Epoch time: {tiempo[e]:.3f} | Best loss: {best_loss_v:.3f}')
-
-# def _ddp_worker(local_rank, gpu_ids, port, args):
-#     world_size = len(gpu_ids)
-#     rank = local_rank
-#     os.environ['MASTER_ADDR'] = '127.0.0.1'
-#     os.environ['MASTER_PORT'] = str(port)
-#     dist.init_process_group(backend='nccl', init_method='env://', rank=rank, world_size=world_size)
-
-#     torch.cuda.set_device(gpu_ids[local_rank])
-#     args.device = torch.device(f'cuda:{gpu_ids[local_rank]}')
-
-#     try:
-#         run(args)
-#     finally:
-#         dist.destroy_process_group()
-
-# if __name__ == "__main__":
-#     params = parser.parse_args()
-
-#     backend, gpu_ids = parse_devices(params.device)
-#     if backend == 'cpu':
-#         params.device = 'cpu'          # será resuelto a torch.device('cpu') en run()
-#         run(params)
-#     elif len(gpu_ids) == 1:
-#         params.device = str(gpu_ids[0])  # será resuelto a torch.device('cuda:X') en run()
-#         run(params)
-#     else:
-#         port = pick_port()
-#         mp.spawn(_ddp_worker, nprocs=len(gpu_ids), args=(gpu_ids, port, params))
-
-
-
-
-
-

@@ -29,6 +29,12 @@ class WFS(nn.Module):
         self.f1    = params.f1
         self.f2    = params.f2
         self.nDE   = params.nDE
+        self.posDE = params.posDE
+
+        ### DISTANCE DEs Layers ###
+        self.dz        = params.dz
+        self.dz_after  = params.dz_after
+        self.dz_before = params.dz_before
 
         self.jModes = params.jModes
         self.modes  = torch.tensor(params.modes, dtype = self.precision.real, device = self.device)

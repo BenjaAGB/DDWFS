@@ -9,19 +9,19 @@ wvl            = 6.350000000000001e-07
 ps_slm         = 3.74e-06
 R              = 0.0007455968688845401
 size           = 0.006
-nDE            = 1
+nDE            = 2
 f1             = 0.1
 f2             = 0.1
 alpha          = 3
 nHead          = 4
 routine        = TEST_P
-expName        = Test_ResolNN_128_ResolData_128_NDiffractive_1_Routine_TEST_P
-pid            = 557866
+expName        = Test_ResolNN_128_ResolData_128_NDiffractive_2_Routine_TEST_P
+pid            = 628252
 device         = cuda:3
 precision_name = single
 evol_save      = 1
 command        = /data2/bgonzalez/desktop/DDWFS/main.py
-date           = 2025-08-27 00:03:26
+date           = 2025-08-27 00:41:38
 
 
 ================== SINGLE ROUTINE ==================

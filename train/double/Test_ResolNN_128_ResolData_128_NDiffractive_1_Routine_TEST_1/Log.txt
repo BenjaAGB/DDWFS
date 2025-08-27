@@ -16,12 +16,12 @@ alpha          = 3
 nHead          = 4
 routine        = TEST_1
 expName        = Test_ResolNN_128_ResolData_128_NDiffractive_1_Routine_TEST_1
-pid            = 13924
+pid            = 580360
 device         = cuda:0
 precision_name = double
 evol_save      = 1
 command        = main.py --nPx 128 --resol_nn 128 --nDE 1 --device 0 --precision_name double --routine TEST_1
-date           = 2025-08-26 16:34:47
+date           = 2025-08-27 00:15:39
 
 
 ================== SINGLE ROUTINE ==================

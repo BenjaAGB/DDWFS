@@ -133,6 +133,47 @@ def Propagation_Free(obj, phi, fourier_mask):
 
     return I
 
+# def Propagation(obj, phi, fourier_mask, DE_layers):
+#     phi = center_pad(phi, obj.fovPx)
+
+#     # obj.DE_layers = kwargs.get('DE_layers', obj.DE_layers)
+
+#     Field = TorchField.begin(wavelength = obj.wvl, grid_size = obj.size, Npx = obj.fovPx, precision = obj.precision_name, batch = phi.shape[0], device= obj.device)
+#     Field_aperture = Field.circ_aperture(R=obj.R)
+
+#     Field_aperture = Field_aperture.apply_phase(phi)
+
+#     Field_propagated = Field_aperture.propagate_asm_pad(z = obj.f1)
+#     Field_lens1 = Field_propagated.lens(f = obj.f1)
+#     Field_propagated = Field_lens1.propagate_asm_pad(z = obj.f1)
+
+#     # --- PSF --- #
+#     Field_propagated.field *= fourier_mask
+
+#     if obj.nDE <= 0:
+#         Field_propagated = Field_propagated.propagate_asm_pad(z=obj.f2)
+#     else:
+#         Field_propagated.field *= UNZ(UNZ(torch.exp(1j * DE_layers[0]), 0), 0)
+#         if obj.nDE == 1:
+#             Field_propagated = Field_propagated.propagate_asm_pad(z=obj.f2)
+#         else:
+#             delta = obj.f2 / obj.nDE
+#             delta_acum = 0
+#             for i in range(1, obj.nDE):
+#                 Field_propagated = Field_propagated.propagate_asm_pad(z=delta)
+#                 Field_propagated.field *= UNZ(UNZ(torch.exp(1j * DE_layers[i]), 0), 0)
+
+#                 delta_acum = delta_acum + delta 
+#             Field_propagated = Field_propagated.propagate_asm_pad(z=delta)
+#             delta_acum = delta_acum + delta
+            
+#     Field_lens2      = Field_propagated.lens(f=obj.f2)
+#     Field_propagated = Field_lens2.propagate_asm_pad(z=obj.f2)
+
+#     I = torch.abs(Field_propagated.field)**2
+
+#     return I
+
 def Propagation(obj, phi, fourier_mask, DE_layers):
     phi = center_pad(phi, obj.fovPx)
 
@@ -145,30 +186,129 @@ def Propagation(obj, phi, fourier_mask, DE_layers):
 
     Field_propagated = Field_aperture.propagate_asm_pad(z = obj.f1)
     Field_lens1 = Field_propagated.lens(f = obj.f1)
-    Field_propagated = Field_lens1.propagate_asm_pad(z = obj.f1)
+
+    if hasattr(DE_layers, "__len__") and not torch.is_tensor(DE_layers):
+        de_list = list(DE_layers)
+    else:
+        de_list = [DE_layers]
+
+    if not obj.posDE:
+
+        Field_propagated = Field_lens1.propagate_asm_pad(z = obj.f1)
+
+        # --- PSF --- #
+        Field_propagated.field *= fourier_mask
+        # --- PSF --- #
+        
+        if len(de_list) <= 0: ##### revisar ##### obj.nDE tambien y guardar distancias
+            Field_propagated = Field_propagated.propagate_asm_pad(z = obj.f2)
+        else:
+            Field_propagated.field *= UNZ(UNZ(torch.exp(1j * de_list[0]), 0), 0)
+            if len(de_list) == 1:
+                Field_propagated = Field_propagated.propagate_asm_pad(z = obj.f2)
+            else:
+                delta = obj.f2 / len(de_list)
+                delta_acum = 0
+                for i in range(1, len(de_list)):
+                    Field_propagated = Field_propagated.propagate_asm_pad(z = delta)
+                    Field_propagated.field *= UNZ(UNZ(torch.exp(1j * de_list[i]), 0), 0)
+                    delta_acum = delta_acum + delta
+
+                Field_propagated = Field_propagated.propagate_asm_pad(z = delta)
+                delta_acum = delta_acum + delta
+
+        Field_lens2 = Field_propagated.lens(f = obj.f2)
+        Field_propagated = Field_lens2.propagate_asm_pad(z = obj.f2)
+
+        I = torch.abs(Field_propagated.field) ** 2
+
+        return I
+    
+    if len(de_list) != len(obj.posDE):
+        raise ValueError('The number of diffractive elements does not match the number of positions specified.')
+    
+    pos2layer = {int(p): de_list[i] for i, p in enumerate(obj.posDE)}
+
+    neg_positions  = sorted([-p for p in obj.posDE if p < 0], reverse=True)
+    pos_positions  = sorted([p for p in obj.posDE if p > 0])
+    zero_positions = (0 in pos2layer)
+
+    if obj.dz is not None:
+        step_before = obj.dz
+        step_after  = obj.dz
+    else:
+        step_before = obj.dz_before
+        step_after  = obj.dz_after
+
+        if step_before is None and len(neg_positions) > 0:
+            step_before = obj.f1 / (neg_positions[0] + 1)
+        if step_after is None and len(pos_positions) > 0:
+            step_after = obj.f2 / (pos_positions[-1] + 1)
+
+    eps = 0.0
+
+    # --- Lens1 -> PSF --- #
+    if len(neg_positions) == 0:
+        Field_propagated = Field_lens1.propagate_asm_pad(z = obj.f1)
+    else:
+        delta_len_1 = obj.f1 - neg_positions[0] * step_before
+
+        if delta_len_1 + eps < 0:
+            delta_len_1 = 0.0
+            
+        Field_propagated = Field_lens1.propagate_asm_pad(z = delta_len_1)
+        delta_len_1_acum = delta_len_1
+
+        for i, n_pos in enumerate(neg_positions):
+            layer = pos2layer[-n_pos]
+            Field_propagated.field *= UNZ(UNZ(torch.exp(1j * layer), 0), 0)
+            next_n_pos = neg_positions[i + 1] if i + 1 < len(neg_positions) else 0
+            dz_neg = (n_pos - next_n_pos) * step_before
+
+            if dz_neg > 0:
+                Field_propagated = Field_propagated.propagate_asm_pad(z = dz_neg)
+
+            delta_len_1_acum = delta_len_1_acum + dz_neg
+    # --- Lens1 -> PSF --- #
 
     # --- PSF --- #
     Field_propagated.field *= fourier_mask
+    if zero_positions:
+        Field_propagated.field *= UNZ(UNZ(torch.exp(1j * pos2layer[0]), 0), 0)
+    # --- PSF --- #
 
-    if obj.nDE <= 0:
-        Field_propagated = Field_propagated.propagate_asm_pad(z=obj.f2)
+    # --- PSF -> Lens2 --- #
+    if len(pos_positions) == 0:
+        Field_propagated = Field_propagated.propagate_asm_pad(z = obj.f2)
     else:
-        Field_propagated.field *= UNZ(UNZ(torch.exp(1j * DE_layers[0]), 0), 0)
-        if obj.nDE == 1:
-            Field_propagated = Field_propagated.propagate_asm_pad(z=obj.f2)
-        else:
-            delta = obj.f2 / obj.nDE
-            delta_acum = 0
-            for i in range(1, obj.nDE):
-                Field_propagated = Field_propagated.propagate_asm_pad(z=delta)
-                Field_propagated.field *= UNZ(UNZ(torch.exp(1j * DE_layers[i]), 0), 0)
+        first_p = pos_positions[0]
+        delta_len_2 = first_p * step_after
 
-                delta_acum = delta_acum + delta 
-            Field_propagated = Field_propagated.propagate_asm_pad(z=delta)
-            delta_acum = delta_acum + delta
+        if delta_len_2 + eps < 0:
+            delta_len_2 = 0.0
+        Field_propagated = Field_propagated.propagate_asm_pad(z = delta_len_2)
+        delta_len_2_acum = delta_len_2
+
+        for i, p_pos in enumerate(pos_positions):
+            layer = pos2layer[p_pos]
+            Field_propagated.field *= UNZ(UNZ(torch.exp(1j * layer), 0), 0)
+
+            if i + 1 < len(pos_positions):
+                dz_pos = (pos_positions[i + 1] - p_pos) * step_after
+            else:
+                dz_pos = obj.f2 - p_pos * step_after
+
+                if dz_pos < 0:
+                    dz_pos = 0.0
+
+            if dz_pos > 0:
+                Field_propagated = Field_propagated.propagate_asm_pad(z = dz_pos)
             
-    Field_lens2      = Field_propagated.lens(f=obj.f2)
-    Field_propagated = Field_lens2.propagate_asm_pad(z=obj.f2)
+            delta_len_2_acum = delta_len_2_acum + dz_pos
+    # --- PSF -> Lens2 --- #
+
+    Field_lens2 = Field_propagated.lens(f = obj.f2)
+    Field_propagated = Field_lens2.propagate_asm_pad(z = obj.f2)
 
     I = torch.abs(Field_propagated.field)**2
 

@@ -37,7 +37,7 @@ def rank0():
 def print0(*args, **kwargs):
     if rank0(): print(*args, **kwargs)
 
-def pick_port(base=29500):
+def pick_port(base = 29500):
     return base + (os.getpid() % 1000)
 
 def parse_devices(devstr: str):
