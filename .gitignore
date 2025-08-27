@@ -154,3 +154,6 @@ train/single/Test_ResolNN_128_ResolData_128_NDiffractive_3_PosD_\[-1, 0, 1]_Rout
 train/single/Test_ResolNN_128_ResolData_128_NDiffractive_5_PosD_\[-2, -1, 0, 1, 2]_Routine_TEST_1/routine_0/train_0/Checkpoint/checkpoint_best-all.pth
 train/single/Test_ResolNN_128_ResolData_128_NDiffractive_5_PosD_\[-2, -1, 0, 1, 2]_Routine_TEST_1/routine_0/train_0/Checkpoint/weights-de.pt
 train/single/Test_ResolNN_128_ResolData_128_NDiffractive_5_PosD_\[-2, -1, 0, 1, 2]_Routine_TEST_1/routine_0/train_0/Checkpoint/weights-nn.pt
+train/single/Test_ResolNN_128_ResolData_128_NDiffractive_2_PosD_\[-1, 1]_Routine_TEST_1/routine_0/train_0/Checkpoint/checkpoint_best-all.pth
+train/single/Test_ResolNN_128_ResolData_128_NDiffractive_2_PosD_\[-1, 1]_Routine_TEST_1/routine_0/train_0/Checkpoint/weights-de.pt
+train/single/Test_ResolNN_128_ResolData_128_NDiffractive_2_PosD_\[-1, 1]_Routine_TEST_1/routine_0/train_0/Checkpoint/weights-nn.pt

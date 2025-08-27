@@ -1,0 +1,61 @@
+================== GENERAL PARAMETERS ==================
+
+D                     = 3.0
+resol_Data            = 128
+resol_NN              = 128
+rooftop               = 0
+ampCal                = 0.1
+wvl                   = 6.350000000000001e-07
+ps_slm                = 3.74e-06
+R                     = 0.0007455968688845401
+size                  = 0.006
+nDE                   = 5
+f1                    = 0.1
+f2                    = 0.1
+alpha                 = 3
+nHead                 = 4
+routine               = TEST_P
+expName               = Test_ResolNN_128_ResolData_128_NDiffractive_5_PosD_[-2, -1, 0, 1, 2]_Routine_TEST_P
+pid                   = 1025805
+device                = cuda:4
+precision_name        = single
+evol_save             = 1
+command               = /data2/bgonzalez/desktop/DDWFS/main.py
+date                  = 2025-08-27 03:39:49
+z_lens1_mm            = 0.1
+z_psf_mm              = 0.2
+z_lens2_mm            = 0.30000000000000004
+z_image_mm            = 0.4
+dz_before_mm          = 0.03333333333333333
+dz_after_mm           = 0.03333333333333333
+DE_pos_codes          = -2, -1, 0, 1, 2
+DE_z_from_aperture_mm = 0.13333333333333336, 0.16666666666666669, 0.2, 0.23333333333333334, 0.26666666666666666
+DE_z_rel_psf_mm       = -0.06666666666666667, -0.03333333333333333, 0.0, 0.03333333333333333, 0.06666666666666667
+
+
+================== SINGLE ROUTINE ==================
+
+~~~~~~~~~~~~~~~~~ ROUTINE 0 ~~~~~~~~~~~~~~~~~
+----------- Train/Test 0 -----------
+
+mInorm       = 1
+init         = CONSTANT, 0
+nnModel      = GcVit
+epoch        = 100
+lr           = 0.002, 0.0002
+dlr          = 0.8, 0.8
+batch        = 10
+nData        = [80 20]
+ab           = 1, 1
+Dr0          = 10, 150
+fp           = (0, 2), (0, 1)
+cost         = std
+cl           = 2, 1
+vNoise       = 0, 0, 0, 1.0
+zModes       = 2, 210
+crop         = False
+norm_nn      = zscore
+fine tunning = 
+lD           = 5
+h            = 1.5707963267948966
+

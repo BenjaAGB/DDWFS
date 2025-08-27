@@ -39,11 +39,14 @@ parser.add_argument('--alpha',          default = 3,          type = float, help
 parser.add_argument('--nHead',          default = 4,          type = int,   help = 'Number of faces of the pyramid')
 parser.add_argument('--f1',             default = 100,        type = float, help = 'Focal length of the first lens in [mm]')
 parser.add_argument('--f2',             default = 100,        type = float, help = 'Focal length of the second lens in [mm]')
-parser.add_argument('--nDE',            default = 3,          type = int,   help = 'Number of diffractive elements')
-parser.add_argument('--posDE',          default = [-1, 0, 1], type = int,   help = 'Position of the diffractive propagator')
-parser.add_argument('--device',         default = '6',        type = str,   help = 'Device to use: cpu or cuda: 0, 1, ..., 7')
+parser.add_argument('--nDE',            default = 5,          type = int,   help = 'Number of diffractive elements')
+parser.add_argument('--dz',             default = 0,          type = float, help = 'Step size for the propagation in [mm]')
+parser.add_argument('--dz_before',      default = 0,          type = float, help = 'Step size before the PSF in [mm]')
+parser.add_argument('--dz_after',       default = 0,          type = float, help = 'Step size after the PSF in [mm]')
+parser.add_argument('--posDE',          default = [-2, -1, 0, 1, 2], type = int,   help = 'Position of the diffractive propagator')
+parser.add_argument('--device',         default = '4',        type = str,   help = 'Device to use: cpu or cuda: 0, 1, ..., 7')
 parser.add_argument('--precision_name', default = 'single',   type = str,   help = 'Precision of the calculations: single, double, hsingle')
-parser.add_argument('--routine',        default = 'TEST_1',   type = str,   help = 'Routine: D (Diffractive), NN (NN), ND (NN + Diffractive)')
+parser.add_argument('--routine',        default = 'TEST_P',   type = str,   help = 'Routine: D (Diffractive), NN (NN), ND (NN + Diffractive)')
 parser.add_argument('--expName',        default = "Test",     type = str,   help = 'Experiment name for saving results')
 parser.add_argument('--evol_save',      default = 1,          type = int,   help = 'Save diffractive evolution on a gif')
 
@@ -63,9 +66,20 @@ params.amp_cal      = 0.1                                                       
 params.device       = torch.device(f"cuda:{params.device}" if torch.cuda.is_available() else "cpu") # Device to use
 params.precision    = get_precision(type=params.precision_name)                                          # Define the dtype for the experiment
 
-params.dz           = None
-params.dz_after    = None
-params.dz_before   = None
+if params.dz > 0:
+    params.dz          = params.dz * mm
+else:
+    params.dz          = None
+
+if params.dz_before > 0:
+    params.dz_before   = params.dz_before * mm
+else:
+    params.dz_before   = None
+
+if params.dz_after > 0:
+    params.dz_after    = params.dz_after * mm
+else:
+    params.dz_after    = None
 
 # params.pupil        = CreateTelescopePupil_physical(params.nPx, params.R, params.size) ################
 params.samp     = 2
@@ -84,15 +98,19 @@ routine_lists = select_routine(params)
 current_date_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 params.expName   = f'{params.expName}_ResolNN_{params.resol_nn}_ResolData_{params.nPx}_NDiffractive_{params.nDE}_PosD_{params.posDE}_Routine_{params.routine}'
 
+PosDE_Error(params)
+
 ### Create Log ###
 Log_Path         = f'./train/{params.precision_name}/{params.expName}'
 os.makedirs(Log_Path, exist_ok=True)
+de_info = compute_de_positions_for_log(params)
 
 pars_log = {'D':params.D, 'resol_Data':params.nPx, 'resol_NN':params.resol_nn, 'rooftop':params.rooftop, 'ampCal':params.amp_cal,
             'wvl':params.wvl, 'ps_slm':params.ps_slm, 'R':params.R, 'size':params.size, 'nDE':params.nDE,
             'f1':params.f1, 'f2':params.f2, 'alpha':params.alpha, 'nHead':params.nHead,
             'routine':params.routine, 'expName':params.expName, 'pid':params.pid, 'device':params.device, 
-            'precision_name':params.precision_name, 'evol_save':params.evol_save, 'command':command, 'date':current_date_str}
+            'precision_name':params.precision_name, 'evol_save':params.evol_save, 'command':command, 'date':current_date_str,
+            **de_info}
 
 Log(pars_log, routine_lists, path = Log_Path, name = f'Log')
 

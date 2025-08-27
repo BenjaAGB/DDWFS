@@ -81,6 +81,87 @@ def getTrainParam(input, rows):
             matrix[offset:rows, col_idx] = positions[0:rows-offset]
     return matrix
 
+def PosDE_Error(params):
+    posDE = list(getattr(params, 'posDE', []) or [])
+    Mneg  = max((-p for p in posDE if p < 0), default=0)  # magnitud más lejana antes de PSF
+    Mpos  = max(( p for p in posDE if p > 0), default=0)  # magnitud más lejana después de PSF
+
+    if params.dz is not None:
+        params.dz = params.dz
+        if Mneg > 0 and (Mneg * params.dz) > params.f1:
+            raise ValueError(f"dz * max(|negativos|) = {Mneg*params.dz:.6g} m excede f1 = {params.f1:.6g} m")
+        if Mpos > 0 and (Mpos * params.dz) > params.f2:
+            raise ValueError(f"dz * max(positivos) = {Mpos*params.dz:.6g} m excede f2 = {params.f2:.6g} m")
+
+        params.dz_before = None
+        params.dz_after  = None
+
+    else:
+        if params.dz_before is not None:
+            params.dz_before = params.dz_before
+            if Mneg > 0 and (Mneg * params.dz_before) > params.f1:
+                raise ValueError(f"dz_before * max(|negativos|) = {Mneg*params.dz_before:.6g} m excede f1 = {params.f1:.6g} m")
+
+        if params.dz_after is not None:
+            params.dz_after = params.dz_after
+            if Mpos > 0 and (Mpos * params.dz_after) > params.f2:
+                raise ValueError(f"dz_after * max(positivos) = {Mpos*params.dz_after:.6g} m excede f2 = {params.f2:.6g} m")
+
+
+def compute_de_positions_for_log(obj):
+    f1, f2 = float(obj.f1), float(obj.f2)
+    z_lens1 = f1
+    z_psf   = f1 + f1
+    z_lens2 = z_psf + f2
+    z_image = z_lens2 + f2
+
+    posDE = list(getattr(obj, 'posDE', []) or [])
+    if getattr(obj, 'dz', None) is not None:
+        step_before = float(obj.dz)
+        step_after  = float(obj.dz)
+    else:
+        neg_mags = sorted([-p for p in posDE if p < 0], reverse=True)
+        pos_mags = sorted([p  for p in posDE if p > 0])
+        step_before = getattr(obj, 'dz_before', None)
+        step_after  = getattr(obj,  'dz_after', None)
+        if step_before is None and len(neg_mags) > 0:
+            step_before = f1 / (neg_mags[0] + 1)
+        if step_after is None and len(pos_mags) > 0:
+            step_after = f2 / (pos_mags[-1] + 1)
+
+        if step_before is None: step_before = 0.0
+        if step_after  is None: step_after  = 0.0
+
+    de_z_from_aperture_m = []
+    de_z_rel_psf_m = []
+    for p in posDE:
+        if p < 0:
+            z = z_psf - abs(p) * step_before
+            z = max(z, z_lens1)
+            rel = -abs(p) * step_before
+        elif p == 0:
+            z = z_psf
+            rel = 0.0
+        else:
+            z = z_psf + p * step_after
+            z = min(z, z_lens2)
+            rel =  p * step_after
+        de_z_from_aperture_m.append(z)
+        de_z_rel_psf_m.append(rel)
+
+    return {
+        'z_lens1_mm': z_lens1,
+        'z_psf_mm':   z_psf,
+        'z_lens2_mm': z_lens2,
+        'z_image_mm': z_image,
+        'dz_before_mm': step_before if step_before else 0.0,
+        'dz_after_mm':  step_after  if step_after  else 0.0,
+        'DE_pos_codes': posDE,
+        'DE_z_from_aperture_mm': [z for z in de_z_from_aperture_m],
+        'DE_z_rel_psf_mm':       [z for z in de_z_rel_psf_m]
+    }
+
+
 def Log(pars, routine, path, name = 'Log'):
     log_path = path + f'/{name}.txt'
     # parameters
