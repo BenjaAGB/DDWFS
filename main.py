@@ -96,21 +96,28 @@ params.pid          = os.getpid()
 routine_lists = select_routine(params)
 
 current_date_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-params.expName   = f'{params.expName}_ResolNN_{params.resol_nn}_ResolData_{params.nPx}_NDiffractive_{params.nDE}_PosD_{params.posDE}_Routine_{params.routine}'
+
+params.de_info = compute_de_positions_for_log(params)
+DE_z = np.array(params.de_info['DE_z_from_aperture']) * 1000 #--- DEs distance mm---#
+de_z_formatted = [f"{z*1000:.2f}" for z in params.de_info['DE_z_from_aperture']]
+de_z_str = '-'.join(de_z_formatted)
+
+params.expName   = f'{params.expName}_ResolNN_{params.resol_nn}_ResolData_{params.nPx}_NDiffractive_{params.nDE}_PosD_[{de_z_str}][mm]_Routine_{params.routine}'
 
 PosDE_Error(params)
 
 ### Create Log ###
 Log_Path         = f'./train/{params.precision_name}/{params.expName}'
 os.makedirs(Log_Path, exist_ok=True)
-de_info = compute_de_positions_for_log(params)
+
+de_info_log = round_de_info(params.de_info)
 
 pars_log = {'D':params.D, 'resol_Data':params.nPx, 'resol_NN':params.resol_nn, 'rooftop':params.rooftop, 'ampCal':params.amp_cal,
             'wvl':params.wvl, 'ps_slm':params.ps_slm, 'R':params.R, 'size':params.size, 'nDE':params.nDE,
             'f1':params.f1, 'f2':params.f2, 'alpha':params.alpha, 'nHead':params.nHead,
             'routine':params.routine, 'expName':params.expName, 'pid':params.pid, 'device':params.device, 
             'precision_name':params.precision_name, 'evol_save':params.evol_save, 'command':command, 'date':current_date_str,
-            **de_info}
+            **de_info_log}
 
 Log(pars_log, routine_lists, path = Log_Path, name = f'Log')
 

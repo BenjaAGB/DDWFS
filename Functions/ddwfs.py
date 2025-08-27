@@ -23,6 +23,11 @@ class FWFS(nn.Module):
         self.precision_name = params.precision_name if hasattr(params,'precision_name') else 'single'
         self.precision      = params.precision if hasattr(params,'precision') else get_precision(type='single')
         self.nDE            = params.nDE if hasattr(params,'nDE') else 1
+        self.posDE          = params.posDE if hasattr(params,'posDE') else [0]
+        self.dz             = params.dz if hasattr(params,'dz') else 0
+        self.dz_before      = params.dz_before if hasattr(params,'dz_before') else None
+        self.dz_after       = params.dz_after if hasattr(params,'dz_after') else None
+        self.de_info        = params.de_info if hasattr(params,'de_info') else None
 
         ### WFS MODEL ###
         self.wfs = WFS(params, device=self.device)

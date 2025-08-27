@@ -150,17 +150,30 @@ def compute_de_positions_for_log(obj):
         de_z_rel_psf_m.append(rel)
 
     return {
-        'z_lens1_mm': z_lens1,
-        'z_psf_mm':   z_psf,
-        'z_lens2_mm': z_lens2,
-        'z_image_mm': z_image,
-        'dz_before_mm': step_before if step_before else 0.0,
-        'dz_after_mm':  step_after  if step_after  else 0.0,
+        'z_lens1': z_lens1,
+        'z_psf':   z_psf,
+        'z_lens2': z_lens2,
+        'z_image': z_image,
+        'dz_before': step_before if step_before else 0.0,
+        'dz_after':  step_after  if step_after  else 0.0,
         'DE_pos_codes': posDE,
-        'DE_z_from_aperture_mm': [z for z in de_z_from_aperture_m],
-        'DE_z_rel_psf_mm':       [z for z in de_z_rel_psf_m]
+        'DE_z_from_aperture': [z for z in de_z_from_aperture_m],
+        'DE_z_rel_psf':       [z for z in de_z_rel_psf_m]
     }
 
+def round_de_info(de_info_dict, decimals=4):
+    de_info_rounded = {}
+    for key, value in de_info_dict.items():
+        if isinstance(value, (int, float)):
+            # Redondear valores individuales
+            de_info_rounded[key] = round(value, decimals)
+        elif isinstance(value, list):
+            # Redondear cada elemento de la lista
+            de_info_rounded[key] = [round(x, decimals) for x in value]
+        else:
+            # Mantener otros tipos de valores sin cambios
+            de_info_rounded[key] = value
+    return de_info_rounded
 
 def Log(pars, routine, path, name = 'Log'):
     log_path = path + f'/{name}.txt'
