@@ -160,3 +160,6 @@ train/single/Test_ResolNN_128_ResolData_128_NDiffractive_2_PosD_\[-1, 1]_Routine
 train/single/Test_ResolNN_128_ResolData_128_NDiffractive_5_PosD_\[133.33-166.67-200.00-233.33-266.67]\[mm]_Routine_TEST_P/routine_0/train_0/Checkpoint/checkpoint_best-all.pth
 train/single/Test_ResolNN_128_ResolData_128_NDiffractive_5_PosD_\[133.33-166.67-200.00-233.33-266.67]\[mm]_Routine_TEST_P/routine_0/train_0/Checkpoint/weights-de.pt
 train/single/Test_ResolNN_128_ResolData_128_NDiffractive_5_PosD_\[133.33-166.67-200.00-233.33-266.67]\[mm]_Routine_TEST_P/routine_0/train_0/Checkpoint/weights-nn.pt
+train/single/Test_ResolNN_128_ResolData_128_NO-Geometry_NDiffractive_5_PosD_\[133.33-166.67-200.00-233.33-266.67]\[mm]_Routine_TEST_P/routine_0/train_0/Checkpoint/checkpoint_best-all.pth
+train/single/Test_ResolNN_128_ResolData_128_NO-Geometry_NDiffractive_5_PosD_\[133.33-166.67-200.00-233.33-266.67]\[mm]_Routine_TEST_P/routine_0/train_0/Checkpoint/weights-de.pt
+train/single/Test_ResolNN_128_ResolData_128_NO-Geometry_NDiffractive_5_PosD_\[133.33-166.67-200.00-233.33-266.67]\[mm]_Routine_TEST_P/routine_0/train_0/Checkpoint/weights-nn.pt

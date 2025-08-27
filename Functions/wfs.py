@@ -185,8 +185,11 @@ class WFS(nn.Module):
             #amp_factor = (3.74e3)*((512-1)//2) * (2*torch.pi/635)*np.tan(self.alpha*np.pi/180)
             mask = torch.exp(1j * torch.normal(mean = 0., std = math.sqrt(2/self.fovPx), size = (self.fovPx, self.fovPx), dtype = self.precision.real))
             self.fourier_mask = (mask/torch.sum(torch.abs(mask.flatten()))).unsqueeze(0).unsqueeze(0).to(self.precision.complex).to(self.device)
+            
+        elif value==0:
+            self.fourier_mask = torch.ones((1,1,self.fovPx,self.fovPx), dtype = self.precision.complex, device = self.device)
 
-        else:
+        else: ###### se puede modificar la precicsion ####
             self.fourier_mask,_ = fourier_geometry(nPx = self.fovPx, nhead = value, alpha = self.alpha, wvl = self.wvl,
                                                    ps = self.ps, rooftop = self.rooftop, precision = get_precision(type = 'double'), device = self.device)
             self.fourier_mask = torch.fft.fftshift(self.fourier_mask)

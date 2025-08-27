@@ -35,7 +35,6 @@ class FWFS(nn.Module):
         self.mInorm = self.wfs.mInorm
         self.norm_nn = params.norm_nn if hasattr(params,'norm_nn') else None
         self.pupil_sum = torch.sum(self.wfs.pupil).to(self.precision.real)
-        # self.nRr = params.nRr if hasattr(params,'nRr') else False
 
         ### DE elements ###
         if self.train_state[0]:
@@ -55,20 +54,14 @@ class FWFS(nn.Module):
                     nn.init.constant_(de, float(self.init[1]))
 
                 self.DE_layers.append(nn.Parameter(de))
-                # self.wfs.DE_layers = self.DE_layers
 
-        # self.register_buffer('DE_dummy', torch.zeros((self.wfs.fovPx, self.wfs.fovPx), dtype=self.precision.real, device=self.device))
         self.DE_dummy = torch.zeros((self.wfs.fovPx, self.wfs.fovPx), dtype = self.precision.real, device = self.device)
 
         ### NN ###
         if self.train_state[1]:
 
             self.NN = select_nn(self)
-            # method = importlib.import_module('models.GcVit')
 
-            # self.NN = method.GCViT(num_classes = len(self.wfs.jModes), depths = [2,2,6,2], num_heads = [2,4,8,16], window_size = [16, 16, 32, 16],
-            #                         resolution = self.wfs.resol_nn, in_chans = 1, dim = 64, mlp_ratio = 3, drop_path_rate = 0.2).to(self.precision.real).to(self.device)
-    
         self.k = torch.tensor((2*torch.pi)/params.wvl, dtype = self.precision.real, device = self.device)
         self.I0 = self.wfs.forward_I0(self.wfs.Piston) # T[1,1,N,M]
         self.I0_DE = self.wfs.forward(phi = self.wfs.Piston, DE_layers = self.DE_layers) # T[1,1,N,M]

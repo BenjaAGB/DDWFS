@@ -36,14 +36,14 @@ parser.add_argument('--wvl',            default = 635,        type = float, help
 parser.add_argument('--ps_slm',         default = 3.74,       type = float, help = 'Pixel size of the SLM in [um]')
 parser.add_argument('--modulation',     default = 0,          type = float, help = 'Modulation in [λ/D]')
 parser.add_argument('--alpha',          default = 3,          type = float, help = 'Angle of the PWFS in [degrees]')
-parser.add_argument('--nHead',          default = 4,          type = int,   help = 'Number of faces of the pyramid')
+parser.add_argument('--nHead',          default = 0,          type = int,   help = 'Number of faces of the pyramid')
 parser.add_argument('--f1',             default = 100,        type = float, help = 'Focal length of the first lens in [mm]')
 parser.add_argument('--f2',             default = 100,        type = float, help = 'Focal length of the second lens in [mm]')
-parser.add_argument('--nDE',            default = 5,          type = int,   help = 'Number of diffractive elements')
+parser.add_argument('--nDE',            default = 2,          type = int,   help = 'Number of diffractive elements')
 parser.add_argument('--dz',             default = 0,          type = float, help = 'Step size for the propagation in [mm]')
 parser.add_argument('--dz_before',      default = 0,          type = float, help = 'Step size before the PSF in [mm]')
 parser.add_argument('--dz_after',       default = 0,          type = float, help = 'Step size after the PSF in [mm]')
-parser.add_argument('--posDE',          default = [-2, -1, 0, 1, 2], type = int,   help = 'Position of the diffractive propagator')
+parser.add_argument('--posDE',          default = [], type = int,   help = 'Position of the diffractive propagator')
 parser.add_argument('--device',         default = '4',        type = str,   help = 'Device to use: cpu or cuda: 0, 1, ..., 7')
 parser.add_argument('--precision_name', default = 'single',   type = str,   help = 'Precision of the calculations: single, double, hsingle')
 parser.add_argument('--routine',        default = 'TEST_P',   type = str,   help = 'Routine: D (Diffractive), NN (NN), ND (NN + Diffractive)')
@@ -97,14 +97,24 @@ routine_lists = select_routine(params)
 
 current_date_str = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-params.de_info = compute_de_positions_for_log(params)
-DE_z = np.array(params.de_info['DE_z_from_aperture']) * 1000 #--- DEs distance mm---#
-de_z_formatted = [f"{z*1000:.2f}" for z in params.de_info['DE_z_from_aperture']]
-de_z_str = '-'.join(de_z_formatted)
+if not params.posDE:
+    params.de_info = compute_de_positions_for_log(params)
+    DE_z = np.array(params.de_info['DE_z_from_aperture']) * 1000 #--- DEs distance mm---#
+    de_z_formatted = [f"{z*1000:.2f}" for z in params.de_info['DE_z_from_aperture']]
+    de_z_str = '-'.join(de_z_formatted)
+    params.posDE = 'Default'
+else:
+    PosDE_Error(params)
+    params.de_info = compute_de_positions_for_log(params)
+    DE_z = np.array(params.de_info['DE_z_from_aperture']) * 1000 #--- DEs distance mm---#
+    de_z_formatted = [f"{z*1000:.2f}" for z in params.de_info['DE_z_from_aperture']]
+    de_z_str = '-'.join(de_z_formatted)
 
-params.expName   = f'{params.expName}_ResolNN_{params.resol_nn}_ResolData_{params.nPx}_NDiffractive_{params.nDE}_PosD_[{de_z_str}][mm]_Routine_{params.routine}'
+if params.nHead > 0:
+    params.expName   = f'{params.expName}_ResolNN_{params.resol_nn}_ResolData_{params.nPx}_Geometry_[NHead{params.nHead}-Alpha{params.alpha}]_NDiffractive_{params.nDE}_PosD_[{de_z_str}][mm]_Routine_{params.routine}'
+elif params.nHead == 0:
+    params.expName   = f'{params.expName}_ResolNN_{params.resol_nn}_ResolData_{params.nPx}_NO-Geometry_NDiffractive_{params.nDE}_PosD_[{de_z_str}][mm]_Routine_{params.routine}'
 
-PosDE_Error(params)
 
 ### Create Log ###
 Log_Path         = f'./train/{params.precision_name}/{params.expName}'
@@ -158,7 +168,6 @@ for i,ro in enumerate(routine_lists, start=0): # Rutines [{}] for each routine
 
             # prs.h   = p_local['h']   # Zernike WFS
             # prs.lD  = p_local['lD']  # Zernike WFS
-            # prs.nRr = p_local['nRr'] # Version estandar GCVIT
 
             prs.modes = torch.tensor(CreateZernikePolynomials1(prs)).to(prs.device).to(prs.precision.real)
 

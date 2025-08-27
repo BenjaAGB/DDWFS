@@ -175,14 +175,15 @@ def Propagation_Free(obj, phi, fourier_mask):
 #     return I
 
 def Propagation(obj, phi, fourier_mask, DE_layers):
+
     phi = center_pad(phi, obj.fovPx)
 
-    # obj.DE_layers = kwargs.get('DE_layers', obj.DE_layers)
-
+    # --- FIELD INITIALIZATION --- #
     Field = TorchField.begin(wavelength = obj.wvl, grid_size = obj.size, Npx = obj.fovPx, precision = obj.precision_name, batch = phi.shape[0], device= obj.device)
     Field_aperture = Field.circ_aperture(R=obj.R)
 
     Field_aperture = Field_aperture.apply_phase(phi)
+    # --- FIELD INITIALIZATION --- #
 
     Field_propagated = Field_aperture.propagate_asm_pad(z = obj.f1)
     Field_lens1 = Field_propagated.lens(f = obj.f1)
@@ -200,7 +201,7 @@ def Propagation(obj, phi, fourier_mask, DE_layers):
         Field_propagated.field *= fourier_mask
         # --- PSF --- #
         
-        if len(de_list) <= 0: ##### revisar ##### obj.nDE tambien y guardar distancias
+        if len(de_list) <= 0: 
             Field_propagated = Field_propagated.propagate_asm_pad(z = obj.f2)
         else:
             Field_propagated.field *= UNZ(UNZ(torch.exp(1j * de_list[0]), 0), 0)
