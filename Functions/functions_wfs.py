@@ -41,7 +41,8 @@ def fourier_geometry(nPx, nhead, alpha, wvl, ps, rooftop, precision, device):
     if nhead >= 2:
         x = torch.linspace( -(nPx-1)//2,(nPx-1)//2,nPx , dtype=precision.real, device=device)*ps
         X,Y = torch.meshgrid(x,x, indexing='ij')
-        step = torch.tensor(2*np.pi/nhead, dtype=precision.real)
+        # step = torch.tensor(2*np.pi/nhead, dtype=precision.real) ### da advertencia ###
+        step = (2*np.pi/nhead).to(dtype= precision.real) ### modificado ###
         nTheta = torch.arange(0,2*np.pi+step,step, dtype=precision.real)
         k = 2*np.pi/wvl
         O_wrap = angle_wrap(X,Y)

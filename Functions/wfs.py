@@ -37,7 +37,10 @@ class WFS(nn.Module):
         self.dz_before = params.dz_before
 
         self.jModes = params.jModes
-        self.modes  = torch.tensor(params.modes, dtype = self.precision.real, device = self.device) ### da advertencia ###
+
+        # self.modes  = torch.tensor(params.modes, dtype = self.precision.real, device = self.device) ### da advertencia ###
+        self.modes = (params.modes.detach().clone() if torch.is_tensor(params.modes) else torch.as_tensor(params.modes)).to(dtype = self.precision.real, device = self.device) ### modificado ###
+
         self.bModes = torch.zeros((len(self.jModes), 1, self.nPx, self.nPx), dtype = self.precision.real, device = self.device)
         for k in range(len(self.jModes)):           
             self.bModes[k, 0:1, : , :] = self.modes[:, k].reshape(self.nPx, self.nPx)

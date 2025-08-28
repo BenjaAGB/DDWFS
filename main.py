@@ -36,7 +36,7 @@ parser.add_argument('--wvl',            default = 635,        type = float, help
 parser.add_argument('--ps_slm',         default = 3.74,       type = float, help = 'Pixel size of the SLM in [um]')
 parser.add_argument('--modulation',     default = 0,          type = float, help = 'Modulation in [λ/D]')
 parser.add_argument('--alpha',          default = 3,          type = float, help = 'Angle of the PWFS in [degrees]')
-parser.add_argument('--nHead',          default = 0,          type = int,   help = 'Number of faces of the pyramid')
+parser.add_argument('--nHead',          default = 4,          type = int,   help = 'Number of faces of the pyramid')
 parser.add_argument('--f1',             default = 100,        type = float, help = 'Focal length of the first lens in [mm]')
 parser.add_argument('--f2',             default = 100,        type = float, help = 'Focal length of the second lens in [mm]')
 parser.add_argument('--nDE',            default = 3,          type = int,   help = 'Number of diffractive elements')
@@ -142,8 +142,8 @@ pars_log = {'D':params.D, 'resol_Data':params.nPx, 'resol_NN':params.resol_nn, '
 
 Log(pars_log, routine_lists, path = Log_Path, name = f'Log')
 
-print(f'TRAINING: device={params.device} | precision={params.precision_name} | expName={params.expName}')
-# time.sleep(5)
+print(f'TRAINING: device={params.device} | precision={params.precision_name} | expName={params.expName}\n')
+time.sleep(5)
 
 for i,ro in enumerate(routine_lists, start=0): # Rutines [{}] for each routine
     path_routine = Log_Path + f'/routine_{i}'
@@ -217,7 +217,8 @@ for i,ro in enumerate(routine_lists, start=0): # Rutines [{}] for each routine
                 epoch_check = 0
                 print('Importing pretrained model')
             else:
-                print('Training cero-model')
+                print('Training cero-model\n')
+                time.sleep(1)
                 if j == 0: # first training
                     epoch_check = 0
                     best_loss_v = float('inf')
@@ -225,7 +226,8 @@ for i,ro in enumerate(routine_lists, start=0): # Rutines [{}] for each routine
 
                     model = FWFS(prs, device=prs.device)
 
-                    print(f'FIRST EXECUTION')
+                    print(f'FIRST EXECUTION\n')
+                    time.sleep(1)
                 else: # fine-tuning
                     finetuning_path = path_routine + f'/train_{j-1}/Checkpoint/checkpoint_best-v.pth'
 
@@ -321,15 +323,17 @@ for i,ro in enumerate(routine_lists, start=0): # Rutines [{}] for each routine
                             plt.savefig(path_train + f'/phis.png', dpi = 300, bbox_inches = 'tight')
                             plt.close()
 
-                    if (e+1)%5 == 0:
+                    if (e+1)%10 == 0: ## 5 originalmente ##
                         lr = dlr*lr
-                        print('lr changed to: ' + ' '.join([format(value, '.3f') for value in lr]))
+                        print('lr changed to: ' + ' '.join([format(value, '.5f') for value in lr]) + '\n')
+                        time.sleep(0.5)
 
                     t1 = time.time()
                     tiempo[e] = t1 - t0
 
                     trainFigure(loss_t.detach(), loss_v.detach(), path_train)
-                    print(f'epoch finished = {e} | loss_t = {loss_t[e]:.3f} [nm] | loss_v = {loss_v[e]:.3f} [nm] / {best_loss_v:.3f} | time = {t1-t0:.3f}')
+                    print(f'epoch finished = {e} | loss_t = {loss_t[e]:.3f} [nm] | loss_v = {loss_v[e]:.3f} [nm] / {best_loss_v:.3f} | time = {t1-t0:.3f}\n')
+                    time.sleep(0.5)
 
             t1_total = time.time()
-            print(f'Total time: {t1_total - t0_total:.3f} | Epoch time: {tiempo[e]:.3f} | Best loss: {best_loss_v:.3f}')
+            print(f'Total time: {t1_total - t0_total:.3f} | Epoch time: {tiempo[e]:.3f} | Best loss: {best_loss_v:.3f}\n')
