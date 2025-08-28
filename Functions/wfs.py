@@ -37,7 +37,7 @@ class WFS(nn.Module):
         self.dz_before = params.dz_before
 
         self.jModes = params.jModes
-        self.modes  = torch.tensor(params.modes, dtype = self.precision.real, device = self.device)
+        self.modes  = torch.tensor(params.modes, dtype = self.precision.real, device = self.device) ### da advertencia ###
         self.bModes = torch.zeros((len(self.jModes), 1, self.nPx, self.nPx), dtype = self.precision.real, device = self.device)
         for k in range(len(self.jModes)):           
             self.bModes[k, 0:1, : , :] = self.modes[:, k].reshape(self.nPx, self.nPx)
@@ -185,7 +185,7 @@ class WFS(nn.Module):
             #amp_factor = (3.74e3)*((512-1)//2) * (2*torch.pi/635)*np.tan(self.alpha*np.pi/180)
             mask = torch.exp(1j * torch.normal(mean = 0., std = math.sqrt(2/self.fovPx), size = (self.fovPx, self.fovPx), dtype = self.precision.real))
             self.fourier_mask = (mask/torch.sum(torch.abs(mask.flatten()))).unsqueeze(0).unsqueeze(0).to(self.precision.complex).to(self.device)
-            
+
         elif value==0:
             self.fourier_mask = torch.ones((1,1,self.fovPx,self.fovPx), dtype = self.precision.complex, device = self.device)
 

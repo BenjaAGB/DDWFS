@@ -1,0 +1,61 @@
+================== GENERAL PARAMETERS ==================
+
+D                  = 3.0
+resol_Data         = 128
+resol_NN           = 128
+rooftop            = 0
+ampCal             = 0.1
+wvl                = 6.350000000000001e-07
+ps_slm             = 3.74e-06
+R                  = 0.0007455968688845401
+size               = 0.006
+nDE                = 7
+f1                 = 0.1
+f2                 = 0.1
+alpha              = 3
+nHead              = 0
+routine            = TEST_1
+expName            = Test_ResolNN_128_ResolData_128_NO-Geometry_NDiffractive_7_PosD_[125.00-150.00-175.00-200.00-225.00-250.00-275.00][mm]_f1_[100.0][mm]_f2_[100.0][mm]_DistSys[400.0][mm]_Routine_TEST_1
+pid                = 3981830
+device             = cuda:3
+precision_name     = single
+evol_save          = 1
+command            = main.py --nPx 128 --resol_nn 128 --nDE 7 --posDE -3 -2 -1 0 1 2 3 --nHead 0 --device 3 --precision_name single --routine TEST_1
+date               = 2025-08-28 11:28:13
+z_lens1            = 0.1
+z_psf              = 0.2
+z_lens2            = 0.3
+z_image            = 0.4
+dz_before          = 0.025
+dz_after           = 0.025
+DE_pos_codes       = -3, -2, -1, 0, 1, 2, 3
+DE_z_from_aperture = 0.125, 0.15, 0.175, 0.2, 0.225, 0.25, 0.275
+DE_z_rel_psf       = -0.075, -0.05, -0.025, 0.0, 0.025, 0.05, 0.075
+
+
+================== SINGLE ROUTINE ==================
+
+~~~~~~~~~~~~~~~~~ ROUTINE 0 ~~~~~~~~~~~~~~~~~
+----------- Train/Test 0 -----------
+
+mInorm       = 1
+init         = CONSTANT, 0
+nnModel      = GcVit
+epoch        = 100
+lr           = 0.005, 0.0002
+dlr          = 0.8, 0.8
+batch        = 10
+nData        = [8000 2000]
+ab           = 1, 1
+Dr0          = 10, 150
+fp           = (0, 2), (0, 1)
+cost         = std
+cl           = 2, 1
+vNoise       = 0, 0, 0, 1.0
+zModes       = 2, 210
+crop         = False
+norm_nn      = zscore
+fine tunning = 
+lD           = 5
+h            = 1.5707963267948966
+

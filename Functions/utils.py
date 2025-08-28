@@ -358,7 +358,7 @@ def select_routine(params):
         vN = [zN,0,0,1.]
         routine_lists = [
             [{'mInorm':mInorm, 'init':init, 
-              'nnModel':'GcVit','epoch':100, 'lr':[0.002,0.0002], 'dlr':[.8,.8],
+              'nnModel':'GcVit','epoch':100, 'lr':[0.005,0.0002], 'dlr':[.8,.8],
                 'batch':b, 'nData':nData, 'ab':ab, 'Dr0':[10,150], 'fp':[(0,2),(0,1)], 
                 'cost':'std', 'cl':[2,1], 'vNoise':vN, 'zModes':nZ, 'crop':False,
                 'norm_nn':'zscore', 'fine tunning':'', 'lD':5,'h':np.pi/2},
