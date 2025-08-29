@@ -8,8 +8,6 @@ import argparse
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
-import torch.distributed as dist
-import torch.multiprocessing as mp
 
 from Functions.utils import *
 from Functions.ddwfs import *
@@ -20,7 +18,6 @@ from Functions.fourier_mask import *
 from Functions.functions_nn import *
 from matplotlib.colors import Normalize
 from torch.utils.data import DataLoader, random_split
-from torch.nn.parallel import DistributedDataParallel as DDP
 ############################################# Libraries #############################################
 
 command = ' '.join(sys.argv)
