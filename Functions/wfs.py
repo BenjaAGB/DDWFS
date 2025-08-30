@@ -88,6 +88,12 @@ class WFS(nn.Module):
         vNoise       = kwargs.get('vNoise', self.vNoise)
         fourier_mask = kwargs.get('fourier_mask', self.fourier_mask)
         DE_layers    = kwargs.get('DE_layers')
+        ## TEST ##
+        if DE_layers is None:
+            nPx   = getattr(self, 'fovPx', 512)         # tamaño H=W
+            dtype = self.precision.real
+            dev   = self.device
+            DE_layers = [torch.zeros((nPx, nPx), dtype=dtype, device=dev)]# for _ in range(nDE)]
 
         I = Propagation(self, phi, fourier_mask = fourier_mask, DE_layers = DE_layers)
 
@@ -107,19 +113,71 @@ class WFS(nn.Module):
 
 
     # CALIBRATION
-    def Calibration(self, **kwargs): #### cambiar forward #####
+    def Calibration(self, **kwargs):  ### modificar nombres ###
+        vNoise = kwargs.get('vNoise',[0.,0.,0.,1.])
         fourier_mask = kwargs.get('fourier_mask', self.fourier_mask)
-        mInorm = kwargs.get('mInorm', self.mInorm)# sum normalization
-        vNoise = kwargs.get('vNoise',[0.,0.,0.,1.])# asumed average of frame/time exposure
-        piston = self.Piston*self.amp_cal
-        I0_v = self.forward(piston, fourier_mask=fourier_mask, vNoise=vNoise)[:,0,self.idx]# T[z,1,N,M]->T[z,NM]
-        z = self.bModes*self.amp_cal
-        mIp_v = self.forward(z, fourier_mask=fourier_mask, vNoise=vNoise)[:,0,self.idx]# T[z,1,N,M]->T[z,NM]
-        mIn_v = self.forward(-z, fourier_mask=fourier_mask, vNoise=vNoise)[:,0,self.idx]# T[z,1,N,M]->T[z,NM]
-        mIn_v,mIp_v = self.mI(mIn_v,I0_v, dim=1,mInorm=mInorm),self.mI(mIp_v,I0_v, dim=1,mInorm=mInorm)# T[z,NM]-I0
-        IMat = ( mIp_v-mIn_v )/(2*self.amp_cal)# T[z,NM]
-        PIMat = torch.linalg.pinv( IMat.t() )
+        DE_layers = kwargs.get('DE_layers')
+        mInorm = kwargs.get('mInorm', self.mInorm)
+        ## TEST ##
+        if DE_layers is None:
+            nPx   = getattr(self, 'fovPx', 512)         # tamaño H=W
+            dtype = self.precision.real
+            dev   = self.device
+            DE_layers = [torch.zeros((nPx, nPx), dtype=dtype, device=dev)]# for _ in range(nDE)]
+        
+        with torch.no_grad():
+            piston = (self.Piston * self.amp_cal).to(device=self.device, dtype=self.precision.real)
+            I0_v = self.forward(piston, fourier_mask=fourier_mask, DE_layers=DE_layers, vNoise=vNoise)[:, 0, self.idx]
+            I0_v = I0_v.to(self.device, dtype=self.precision.real, non_blocking=True)
+
+            # z (209 modos) en el dtype/device que usas en todo el sistema
+            z_full = (self.bModes * self.amp_cal).to(device=self.device, dtype=self.precision.real)
+            Z  = z_full.shape[0]
+            NM = self.idx.numel()
+
+            # Reservas en CPU para no llenar VRAM
+            mIp_cpu = torch.empty((Z, NM), dtype=self.precision.real, device='cpu')
+            mIn_cpu = torch.empty((Z, NM), dtype=self.precision.real, device='cpu')
+
+            chunk = 32  # ajusta según tu GPU (16/32/64)
+            for s in range(0, Z, chunk):
+                e  = min(s + chunk, Z)
+                z  = z_full[s:e]                          # ya en device y dtype correcto
+                Ip = self.forward(z,  fourier_mask=fourier_mask, DE_layers=DE_layers, vNoise=vNoise)[:, 0, self.idx]
+                In = self.forward(-z, fourier_mask=fourier_mask, DE_layers=DE_layers, vNoise=vNoise)[:, 0, self.idx]
+
+                # Normalización mI en el mismo device/dtype
+                Ip = self.mI(Ip, I0_v, dim=1, mInorm=mInorm)
+                In = self.mI(In, I0_v, dim=1, mInorm=mInorm)
+
+                # Bajar resultados a CPU y liberar
+                mIp_cpu[s:e] = Ip.to('cpu', non_blocking=True)
+                mIn_cpu[s:e] = In.to('cpu', non_blocking=True)
+                del z, Ip, In
+                torch.cuda.empty_cache()
+
+        # IMat y pseudo-inversa en CPU (misma precisión)
+        IMat  = (mIp_cpu.to(device = self.device) - mIn_cpu.to(device = self.device)) / (2 * self.amp_cal)
+        PIMat = torch.linalg.pinv(IMat.t()) 
+
         return I0_v, PIMat
+
+        
+    # def Calibration(self, **kwargs): #### cambiar forward #####
+    #     vNoise = kwargs.get('vNoise',[0.,0.,0.,1.])
+    #     fourier_mask = kwargs.get('fourier_mask', self.fourier_mask)
+    #     DE_layers = kwargs.get('DE_layers')
+    #     mInorm = kwargs.get('mInorm', self.mInorm)
+        
+    #     piston = self.Piston * self.amp_cal
+    #     I0_v = self.forward(piston, fourier_mask = fourier_mask, DE_layers = DE_layers, vNoise = vNoise)[:, 0, self.idx]  # T[z,1,N,M]->T[z,NM]
+    #     z = self.bModes * self.amp_cal
+    #     mIp_v = self.forward(z, fourier_mask = fourier_mask, DE_layers = DE_layers, vNoise = vNoise)[:, 0, self.idx]  # T[z,1,N,M]->T[z,NM]
+    #     mIn_v = self.forward(-z, fourier_mask = fourier_mask, DE_layers = DE_layers, vNoise = vNoise)[:, 0, self.idx]  # T[z,1,N,M]->T[z,NM]
+    #     mIn_v, mIp_v = self.mI(mIn_v, I0_v, dim = 1, mInorm = mInorm), self.mI(mIp_v, I0_v, dim = 1, mInorm = mInorm)  # T[z,NM]-I0
+    #     IMat = (mIp_v - mIn_v)/(2 * self.amp_cal)  # T[z,NM]
+    #     PIMat = torch.linalg.pinv(IMat.t())
+    #     return I0_v, PIMat
     
     # META-INTENSITY
     def mI(self, I,I0, mInorm=1,dim=1):  

@@ -176,6 +176,7 @@ def Propagation_Free(obj, phi, fourier_mask):
 #     return I
 
 def Propagation(obj, phi, fourier_mask, DE_layers):
+    fourier_mask = obj.ModPhasor * fourier_mask
 
     phi = center_pad(phi, obj.fovPx)
 
@@ -199,13 +200,13 @@ def Propagation(obj, phi, fourier_mask, DE_layers):
         Field_propagated = Field_lens1.propagate_asm_pad(z = obj.f1)
 
         # --- PSF --- #
-        Field_propagated.field *= fourier_mask
+        Field_propagated.field = fourier_mask * Field_propagated.field
         # --- PSF --- #
         
         if len(de_list) <= 0: 
             Field_propagated = Field_propagated.propagate_asm_pad(z = obj.f2)
         else:
-            Field_propagated.field *= UNZ(UNZ(torch.exp(1j * de_list[0]), 0), 0)
+            Field_propagated.field = UNZ(UNZ(torch.exp(1j * de_list[0]), 0), 0) * Field_propagated.field
             if len(de_list) == 1:
                 Field_propagated = Field_propagated.propagate_asm_pad(z = obj.f2)
             else:
@@ -213,7 +214,7 @@ def Propagation(obj, phi, fourier_mask, DE_layers):
                 delta_acum = 0
                 for i in range(1, len(de_list)):
                     Field_propagated = Field_propagated.propagate_asm_pad(z = delta)
-                    Field_propagated.field *= UNZ(UNZ(torch.exp(1j * de_list[i]), 0), 0)
+                    Field_propagated.field = UNZ(UNZ(torch.exp(1j * de_list[i]), 0), 0) * Field_propagated.field
                     delta_acum = delta_acum + delta
 
                 Field_propagated = Field_propagated.propagate_asm_pad(z = delta)
@@ -222,10 +223,10 @@ def Propagation(obj, phi, fourier_mask, DE_layers):
         Field_lens2 = Field_propagated.lens(f = obj.f2)
         Field_propagated = Field_lens2.propagate_asm_pad(z = obj.f2)
 
-        I = torch.abs(Field_propagated.field) ** 2
+        I = torch.sum(torch.abs(Field_propagated.field) ** 2, dim=1, keepdim=True)
 
         return I
-    
+    ## falta cambiar para varios canales que es la modulacion ###
     if len(de_list) != len(obj.posDE):
         raise ValueError('The number of diffractive elements does not match the number of positions specified.')
     
@@ -312,7 +313,7 @@ def Propagation(obj, phi, fourier_mask, DE_layers):
     Field_lens2 = Field_propagated.lens(f = obj.f2)
     Field_propagated = Field_lens2.propagate_asm_pad(z = obj.f2)
 
-    I = torch.abs(Field_propagated.field)**2
+    I = torch.sum(torch.abs(Field_propagated.field) ** 2, dim=1, keepdim=True)
 
     return I
 

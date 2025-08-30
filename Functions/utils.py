@@ -54,6 +54,15 @@ def ddp_avg(x, device):
     t /= dist.get_world_size()
     return float(t.item())
 
+def tag(name, seq, float_fmt=None):
+    def s(v):
+        if isinstance(v, (int, np.integer)):  # ints
+            return str(int(v))
+        if isinstance(v, float):              # floats con formato opcional
+            return format(v, float_fmt or "g")
+        return str(v)
+    return f"{name}[{'-'.join(s(x) for x in seq)}]"
+
 
 def get_precision(type):
     precision = dC()

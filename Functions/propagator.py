@@ -205,13 +205,13 @@ class TorchField:
 
     # Propagación ASM con padding
     def propagate_asm_pad(self, z, *, padding=True):
-        B,_,N,_ = self.field.shape
+        B,C,N,_ = self.field.shape #### se coloco la C ##
         dx,lam  = self.dx, self.wavelength
         k       = 2*pi/lam; p=self.precision
 
         if padding:
             Nfft = 2*N
-            pad  = torch.zeros((B,1,Nfft,Nfft), dtype=self.dtype, device=self.device)
+            pad  = torch.zeros((B,C,Nfft,Nfft), dtype=self.dtype, device=self.device)
             pad[..., :N, :N] = self.field
             U = torch.fft.fft2(pad)
         else:

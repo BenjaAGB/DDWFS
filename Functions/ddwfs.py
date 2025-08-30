@@ -29,6 +29,8 @@ class FWFS(nn.Module):
         self.dz_after       = params.dz_after if hasattr(params,'dz_after') else None
         self.de_info        = params.de_info if hasattr(params,'de_info') else None
 
+        self.test_ol        = params.test_ol if hasattr(params,'test_ol') else False
+
         ### WFS MODEL ###
         self.wfs = WFS(params, device=self.device)
 
@@ -37,7 +39,7 @@ class FWFS(nn.Module):
         self.pupil_sum = torch.sum(self.wfs.pupil).to(self.precision.real)
 
         ### DE elements ###
-        if self.train_state[0]:
+        if self.train_state[0] or self.test_ol: ##### revisar el train_state ######
 
             self.DE_layers = nn.ParameterList()
 
@@ -54,11 +56,12 @@ class FWFS(nn.Module):
                     nn.init.constant_(de, float(self.init[1]))
 
                 self.DE_layers.append(nn.Parameter(de))
+        else: ##### revisar el train_state ######
+            self.DE_layers = torch.zeros((self.wfs.fovPx, self.wfs.fovPx), dtype = self.precision.real, device = self.device)
 
-        self.DE_dummy = torch.zeros((self.wfs.fovPx, self.wfs.fovPx), dtype = self.precision.real, device = self.device)
 
         ### NN ###
-        if self.train_state[1]:
+        if self.train_state[1] or self.test_ol:
 
             self.NN = select_nn(self)
 
@@ -82,10 +85,10 @@ class FWFS(nn.Module):
             I = norm_I(self, I, norm_nn)# T[b,1,N,M]
             Zest = self.NN(I)# T[b,z]
         else:
-            I0_v,PIMat = self.pwfs.Calibration(fourier_mask=fourier_mask, mInorm=mInorm)
-            mI_v = self.pwfs.mI(I[:,0,self.pwfs.idx],I0_v, dim=1, mInorm=mInorm)
-            Zest = ( PIMat @ mI_v.t() ).t()# T[z,b]-> T[b,z]    
-        return Zest,I_deg
+            I0_v, PIMat = self.wfs.Calibration(fourier_mask = self.wfs.fourier_mask, DE_layers = self.DE_layers, mInorm = mInorm)
+            mI_v = self.wfs.mI(I[:, 0, self.wfs.idx], I0_v, dim=1, mInorm = mInorm)
+            Zest = (PIMat @ mI_v.t()).t()# T[z,b]-> T[b,z]
+        return Zest, I_deg
     
     # def norm_I(self,I,norm=None):
     #         if norm==None:

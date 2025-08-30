@@ -196,3 +196,6 @@ train/single/Test_ResolNN_128_ResolData_128_Geometry_\[NHead4-Alpha3]_NDiffracti
 train/single/Test_ResolNN_128_ResolData_128_Geometry_\[NHead4-Alpha3]_NDiffractive_3_PosD_\[150.00-200.00-250.00]\[mm]_f1_\[100.0]\[mm]_f2_\[100.0]\[mm]_DistSys\[400.0]\[mm]_Routine_TEST_P/routine_0/train_0/Checkpoint/checkpoint_best-all.pth
 train/single/Test_ResolNN_128_ResolData_128_Geometry_\[NHead4-Alpha3]_NDiffractive_3_PosD_\[150.00-200.00-250.00]\[mm]_f1_\[100.0]\[mm]_f2_\[100.0]\[mm]_DistSys\[400.0]\[mm]_Routine_TEST_P/routine_0/train_0/Checkpoint/weights-de.pt
 train/single/Test_ResolNN_128_ResolData_128_Geometry_\[NHead4-Alpha3]_NDiffractive_3_PosD_\[150.00-200.00-250.00]\[mm]_f1_\[100.0]\[mm]_f2_\[100.0]\[mm]_DistSys\[400.0]\[mm]_Routine_TEST_P/routine_0/train_0/Checkpoint/weights-nn.pt
+train/single/Test_ResolNN_128_ResolData_128_Geometry_\[NHead4-Alpha3]_NDiffractive_3_PosD_\[150.00-200.00-250.00]\[mm]_f1_\[100.0]\[mm]_f2_\[100.0]\[mm]_DistSys\[400.0]\[mm]_Routine_TEST_P/tests/OL_Data/N_Data_1000_Dr0_60--1/atm_Dro60-1_Z210_T1000_single.npz
+test/OL_DATA/PYR_WFS_N_Data_1000_Dr0_60--1/pyr_wfs_nHead\[2-3-4]_Mod\[0-1-2]_Dro60-1_Zmodes210.0_T1000_single.npy
+test/OL_DATA/PYR_WFS_N_Data_1000_Dr0_60--1/atm_std.npy

@@ -1,14 +1,17 @@
 ############################################# Libraries #############################################
 import os
+from pyexpat import model
 import sys
 import time
 import copy
 import torch
+import pathlib
 import argparse
 import datetime
 import numpy as np
 import matplotlib.pyplot as plt
 
+from Functions import wfs
 from Functions.utils import *
 from Functions.ddwfs import *
 from Functions.functions import *
@@ -43,14 +46,15 @@ parser.add_argument('--dz',             default = 0,          type = float, help
 parser.add_argument('--dz_before',      default = 0,          type = float, help = 'Step size before the PSF in [mm]')
 parser.add_argument('--dz_after',       default = 0,          type = float, help = 'Step size after the PSF in [mm]')
 parser.add_argument('--posDE',          default = [-1, 0, 1],         type = int,   help = 'Position of the diffractive propagator', nargs = '+')
-parser.add_argument('--device',         default = '4',        type = str,   help = 'Device to use: cpu or cuda: 0, 1, ..., 7')
+parser.add_argument('--device',         default = '7',        type = str,   help = 'Device to use: cpu or cuda: 0, 1, ..., 7')
 parser.add_argument('--precision_name', default = 'single',   type = str,   help = 'Precision of the calculations: single, double, hsingle')
 parser.add_argument('--routine',        default = 'TEST_P',   type = str,   help = 'Routine: D (Diffractive), NN (NN), ND (NN + Diffractive)')
 parser.add_argument('--expName',        default = 'Test',     type = str,   help = 'Experiment name for saving results')
 parser.add_argument('--zoom',           default = 1,          type = int,   help = 'Zoom factor for the output images')
 parser.add_argument('--nTest',          default = 1000,       type = int,   help = 'Number of examples for Test')
-parser.add_argument('--batch',          default = 100,        type = int,   help = 'Batch size')
+parser.add_argument('--batch',          default = 10,         type = int,   help = 'Batch size')
 parser.add_argument('--cost',           default = 'rmse',     type = str,   help = 'Cost function')
+parser.add_argument('--pyr_wfs_test',   default = False,      type = bool,  help = 'Test for PYR_WFS')
 
 params = parser.parse_args()
 ############################################# Argument Parser #############################################
@@ -147,7 +151,7 @@ params.mask_pupil = torch.tensor(params.pupil, dtype = params.precision.real, de
 
 params.jModes  = torch.arange(params.zModes[0], params.zModes[1]+1)
 params.modes = torch.tensor(CreateZernikePolynomials1(params)).to(params.device).to(params.precision.real)
-
+    
 if params.nTest % params.batch != 0:
     raise KeyError('Please select a batch that divide the T in integer parts')
 
@@ -156,5 +160,147 @@ if params.cost in ['mse','rmse','mae']:
 elif params.cost in ['std','mad','var']:
     cost = COST_spatial(mode=params.cost, dim=(-2,-1)).to(params.device)
 
-main_path = params.expName + f'/tests/OL_Data/'
-os.makedirs(main_path, exist_ok=True)
+save_path = pathlib.Path(params.expName).name
+main_path = pathlib.Path('train') / params.precision_name / save_path
+
+main_test_path = main_path / 'tests' / 'OL_Data'
+main_test_path.mkdir(parents=True, exist_ok=True)
+
+vNs = ''.join(map(str, routine_lists[0][0]['vNoise']))
+
+exp_path = main_test_path / f'N_Data_{params.nTest}_Dr0_{params.Dr0[0]}--{params.Dr0[-1]}'
+exp_path.mkdir(parents=True, exist_ok=True)
+
+print( f'RMSE SWEEP: dvc={params.device} | T={params.nTest} | b={params.batch} | Dr0={params.Dr0} | M={params.modulation} | nDE={params.nDE} | nHead={params.nHead}')
+
+atm_name = f'atm_Dro{params.Dr0[0]}-{params.Dr0[-1]}_Z{params.zModes[-1]}_T{params.nTest}_{params.precision_name}'
+
+if not os.path.exists(exp_path / (atm_name + '.npz')):
+    PHI,ZGT = ATM(params, r0v = params.r0, nData = params.nTest)#, seed = params.pid)
+    np.savez(exp_path / (atm_name + '.npz'), Phi=PHI.cpu().numpy(), Zgt=ZGT.cpu().numpy())
+else:
+    print(f'Importing {atm_name} ATM')
+    dataset = np.load(exp_path / (atm_name + '.npz'))
+    PHI = torch.from_numpy(dataset['Phi'])
+    ZGT = torch.from_numpy(dataset['Zgt'])
+    
+torch.cuda.empty_cache()
+
+if params.pyr_wfs_test: ## puede ir mas arriba
+
+    print('--- PYR WFS TEST ---')
+
+    exp_path = pathlib.Path(f'test/OL_DATA/PYR_WFS_N_Data_{params.nTest}_Dr0_{params.Dr0[0]}--{params.Dr0[-1]}')
+    exp_path.mkdir(parents=True, exist_ok=True)
+
+    pyr_params         = copy.deepcopy(params)
+    pyr_params.nDE     = 0
+    pyr_params.posDE   = []
+    pyr_params.vNoise  = routine_lists[0][0]['vNoise']
+    pyr_params.mInorm  = routine_lists[0][0]['mInorm']
+    pyr_params.init    = routine_lists[0][0]['init']
+    pyr_params.crop    = routine_lists[0][0]['crop']
+    pyr_params.norm_nn = routine_lists[0][0]['norm_nn']
+    pyr_params.zModes  = torch.tensor(pyr_params.zModes, dtype=pyr_params.precision.real)
+
+    pyr_wfs = FWFS(pyr_params, device=pyr_params.device).eval()
+
+    pyr_params.mod = [0, 1, 2]
+    pyr_params.nhs = [2, 3, 4]
+
+    nhead_tag = tag("nHead", pyr_params.nhs)
+    mod_tag   = tag("Mod",   pyr_params.mod)
+
+    pyr_wfs_name =  f'pyr_wfs_{nhead_tag}_{mod_tag}_Dro{pyr_params.Dr0[0]}-{pyr_params.Dr0[-1]}_Zmodes{pyr_params.zModes[-1]}_T{pyr_params.nTest}_{pyr_params.precision_name}'
+    pyr_wfs_path = exp_path / (pyr_wfs_name + '.npy')
+    atm_std_path = exp_path /  'atm_std.npy'
+
+    if not os.path.exists(pyr_wfs_path) or not os.path.exists(atm_std_path): ## adjuntar la carpeta de un del atm para hacer el 
+        print(f'PWFS used: alpha={pyr_params.alpha:.4f} | nHead={pyr_params.nHead}')
+        raw_pyr_wfs = torch.empty((len(pyr_params.mod), len(pyr_params.nhs), len(pyr_params.r0), pyr_params.nTest), dtype = pyr_params.precision.real).to('cpu')
+        total_pyr_wfs = len(pyr_params.nhs) * len(pyr_params.mod) * len(pyr_params.r0) * (pyr_params.nTest // pyr_params.batch)
+        raw_atm = torch.empty((len(pyr_params.r0), pyr_params.nTest), dtype = pyr_params.precision.real).to('cpu')
+
+        with tqdm(total=total_pyr_wfs, desc='', bar_format=bar_format) as pbar_pyr_wfs:
+            for i, m in enumerate(pyr_params.mod):
+                pyr_wfs.wfs.modulation = m
+
+                for j,nh in enumerate(pyr_params.nhs): 
+                    pyr_wfs.wfs.nHead = nh
+                    _, piston = pyr_wfs(pyr_wfs.wfs.Piston, vNoise=pyr_params.vNoise)
+                    pos = np.sqrt(piston.shape[-1]).astype(np.int32)
+                    piston = piston.reshape(pos, pos).detach().cpu()
+                    plt.imshow(piston.cpu().squeeze())
+                    #plt.colorbar()
+                    plt.axis('off')
+                    plt.savefig(exp_path / f'I0_pyr_wfs_mod{m}_nhead{nh}.png', dpi=300, bbox_inches='tight')
+                    plt.close()
+
+                    I0_v, PIMat = pyr_wfs.wfs.Calibration(mInorm=pyr_params.mInorm)
+
+                    for r in range(len(params.r0)):
+                        for t in range(params.nTest//params.batch):
+                            pbar_pyr_wfs.set_description(f'Testing Pyr_WFS: Nheads={nh} | Mod={m} | r0={params.r0[r]}')
+                            batch = np.arange(params.batch * t, params.batch * (t + 1))
+                            iwfs = UNZ(PHI[r, batch, :, :], 1).to(params.precision.real).to(params.device)
+                            zgt = ZGT[r, batch, :].to(params.precision.real).to(params.device)
+
+                            # --- ESTIMATION --- #
+                            I = pyr_wfs.wfs.forward(iwfs, vNoise=pyr_params.vNoise)
+                            mI_v = pyr_wfs.wfs.mI(I[:, 0, pyr_wfs.wfs.idx], I0_v, mInorm = pyr_params.mInorm)
+                            zest = (PIMat @ mI_v.t()).t()
+                            # --- ESTIMATION --- #
+
+                            raw_atm[r, batch] = torch.std(iwfs[..., torch.tensor(params.pupilLogical)].cpu(), dim=(-2,-1))# T[T,1,NM] -> T[r,T] fbasiufbaiufbaiusf
+                            error = cost(zgt, zest).detach().cpu()
+                            raw_pyr_wfs[i, j, r, batch] = error.squeeze()
+                            pbar_pyr_wfs.update(1)
+
+        np.save(pyr_wfs_path, raw_pyr_wfs)
+        np.save(atm_std_path, raw_atm)
+
+    else:
+        print(f'Pyr_WFS_Mod{mod_tag}_nHead{nhead_tag} Open Loop exists at {pyr_wfs_path} and ATM_std {atm_std_path}')
+
+else:
+    print('--- DDWFS TEST ---')
+
+    ddwfs_path   = exp_path / 'ol_data.npy'
+    model_path   = main_path / 'routine_0' / 'train_0' / 'Checkpoint' / 'checkpoint_best-all.pth' ## modificar para fine tune
+    w_nn_path    = main_path / 'routine_0' / 'train_0' / 'Checkpoint' / 'weights-nn.pt'
+    w_de_path    = main_path / 'routine_0' / 'train_0' / 'Checkpoint' / 'de_layers.pth'
+
+    if not os.path.exists(ddwfs_path):
+        # raw_ddwfs = torch.empty((len(routine_lists), 1, len(params.r0), params.nTest), dtype = params.precision.real).to('cpu')
+        raw_ddwfs = torch.empty((1, 1, len(params.r0), params.nTest), dtype = params.precision.real).to('cpu')
+
+        # total_ddwfs= len(routine_lists) * len(params.r0) * (params.nTest // params.batch)
+        total_ddwfs= 1 * len(params.r0) * (params.nTest // params.batch)
+
+        with tqdm(total = total_ddwfs, desc = '', bar_format = bar_format) as pbar_ddwfs:
+            
+            # --- Nico Loading --- #
+            # ddwfs = torch.load(model_path, map_location = params.device, weights_only = False).to(params.device).eval() ###################checkpoint#################
+            # print(ddwfs)
+
+            # --- Other Loading --- #
+            ddwfs_params         = copy.deepcopy(params)
+            ddwfs_params.nDE     = 0
+            ddwfs_params.posDE   = []
+            ddwfs_params.vNoise  = routine_lists[0][0]['vNoise']
+            ddwfs_params.mInorm  = routine_lists[0][0]['mInorm']
+            ddwfs_params.init    = routine_lists[0][0]['init']
+            ddwfs_params.crop    = routine_lists[0][0]['crop']
+            ddwfs_params.norm_nn = routine_lists[0][0]['norm_nn']
+            ddwfs_params.zModes  = torch.tensor(ddwfs_params.zModes, dtype=ddwfs_params.precision.real)
+
+            # ddwfs_params.test_ol = True
+
+            ddwfs = FWFS(ddwfs_params, device = ddwfs_params.device).to(ddwfs_params.device)
+            state_nn = torch.load(w_nn_path, map_location='cpu')
+            ddwfs.NN.load_state_dict(state_nn, strict=True)
+
+            state_de = torch.load(w_de_path, map_location='cpu')
+            ddwfs.DE_layers.load_state_dict(state_de, strict=True)
+
+            ddwfs.eval()
